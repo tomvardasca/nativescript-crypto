@@ -1,0 +1,8 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" loaded="pageLoaded" class="page"
+  xmlns:ui="nativescript-crypto">
+  <StackLayout class="p-20">
+    <Button text="sha256" tap="sha256" />
+    <Button text="random" tap="random" />
+    <Button text="deriveSecureKey" tap="deriveSecureKey" />
+  </StackLayout>
+</Page>

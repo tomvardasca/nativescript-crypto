@@ -1,0 +1,183 @@
+
+declare class ClearMessage extends NSObject {
+
+	static alloc(): ClearMessage; // inherited from NSObject
+
+	static new(): ClearMessage; // inherited from NSObject
+
+	readonly base64String: string;
+
+	readonly data: NSData;
+
+	constructor(o: { base64Encoded: string; });
+
+	constructor(o: { data: NSData; });
+
+	constructor(o: { string: string; using: number; });
+
+	encryptedWithPaddingError(key: PublicKey, padding: SecPadding): EncryptedMessage;
+
+	initWithBase64EncodedError(base64String: string): this;
+
+	initWithData(data: NSData): this;
+
+	initWithStringUsingError(string: string, rawEncoding: number): this;
+
+	signedWithDigestTypeError(key: PrivateKey, digestType: DigestType): Signature;
+
+	verifyWithSignatureDigestTypeError(key: PublicKey, signature: Signature, digestType: DigestType): VerificationResult;
+}
+
+declare const enum DigestType {
+
+	Sha1 = 0,
+
+	Sha224 = 1,
+
+	Sha256 = 2,
+
+	Sha384 = 3,
+
+	Sha512 = 4
+}
+
+declare class EncryptedMessage extends NSObject {
+
+	static alloc(): EncryptedMessage; // inherited from NSObject
+
+	static new(): EncryptedMessage; // inherited from NSObject
+
+	readonly base64String: string;
+
+	readonly data: NSData;
+
+	constructor(o: { base64Encoded: string; });
+
+	constructor(o: { data: NSData; });
+
+	decryptedWithPaddingError(key: PrivateKey, padding: SecPadding): ClearMessage;
+
+	initWithBase64EncodedError(base64String: string): this;
+
+	initWithData(data: NSData): this;
+}
+
+declare class PrivateKey extends NSObject {
+
+	static alloc(): PrivateKey; // inherited from NSObject
+
+	static new(): PrivateKey; // inherited from NSObject
+
+	readonly originalData: NSData;
+
+	readonly reference: any;
+
+	constructor(o: { base64Encoded: string; });
+
+	constructor(o: { data: NSData; });
+
+	constructor(o: { derNamed: string; in: NSBundle; });
+
+	constructor(o: { pemEncoded: string; });
+
+	constructor(o: { pemNamed: string; in: NSBundle; });
+
+	constructor(o: { reference: any; });
+
+	base64StringAndReturnError(): string;
+
+	dataAndReturnError(): NSData;
+
+	initWithBase64EncodedError(base64String: string): this;
+
+	initWithDataError(data: NSData): this;
+
+	initWithDerNamedInError(derName: string, bundle: NSBundle): this;
+
+	initWithPemEncodedError(pemString: string): this;
+
+	initWithPemNamedInError(pemName: string, bundle: NSBundle): this;
+
+	initWithReferenceError(reference: any): this;
+
+	pemStringAndReturnError(): string;
+}
+
+declare class PublicKey extends NSObject {
+
+	static alloc(): PublicKey; // inherited from NSObject
+
+	static new(): PublicKey; // inherited from NSObject
+
+	static publicKeysWithPemEncoded(pemString: string): NSArray<PublicKey>;
+
+	readonly originalData: NSData;
+
+	readonly reference: any;
+
+	constructor(o: { base64Encoded: string; });
+
+	constructor(o: { data: NSData; });
+
+	constructor(o: { derNamed: string; in: NSBundle; });
+
+	constructor(o: { pemEncoded: string; });
+
+	constructor(o: { pemNamed: string; in: NSBundle; });
+
+	constructor(o: { reference: any; });
+
+	base64StringAndReturnError(): string;
+
+	dataAndReturnError(): NSData;
+
+	initWithBase64EncodedError(base64String: string): this;
+
+	initWithDataError(data: NSData): this;
+
+	initWithDerNamedInError(derName: string, bundle: NSBundle): this;
+
+	initWithPemEncodedError(pemString: string): this;
+
+	initWithPemNamedInError(pemName: string, bundle: NSBundle): this;
+
+	initWithReferenceError(reference: any): this;
+
+	pemStringAndReturnError(): string;
+}
+
+declare class Signature extends NSObject {
+
+	static alloc(): Signature; // inherited from NSObject
+
+	static new(): Signature; // inherited from NSObject
+
+	readonly base64String: string;
+
+	readonly data: NSData;
+
+	constructor(o: { base64Encoded: string; });
+
+	constructor(o: { data: NSData; });
+
+	initWithBase64EncodedError(base64String: string): this;
+
+	initWithData(data: NSData): this;
+}
+
+declare var SwiftyRSAVersionNumber: number;
+
+declare var SwiftyRSAVersionNumberVar: number;
+
+declare var SwiftyRSAVersionString: interop.Reference<number>;
+
+declare var SwiftyRSAVersionStringVar: interop.Reference<number>;
+
+declare class VerificationResult extends NSObject {
+
+	static alloc(): VerificationResult; // inherited from NSObject
+
+	static new(): VerificationResult; // inherited from NSObject
+
+	readonly isSuccessful: boolean;
+}

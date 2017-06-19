@@ -1,0 +1,15 @@
+platform :ios, '8.3'
+
+pod 'libsodium', '~> 1.0.12'
+pod 'AesGcm', '~> 0.1'
+pod 'SwiftyRSA/ObjC'
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    if target.name == 'SwiftyRSA'
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_VERSION'] = '3.0'
+      end
+    end
+  end
+end

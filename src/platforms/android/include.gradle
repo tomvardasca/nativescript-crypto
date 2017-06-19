@@ -1,0 +1,18 @@
+/* Include.gradle configuration: http://docs.nativescript.org/plugins/plugins#includegradle-specification */
+repositories {
+    mavenCentral()
+    // jcenter()
+}
+
+android {
+	productFlavors {
+		"nativescript-crypto" {
+			dimension "nativescript-crypto"
+		}
+	}
+}
+
+dependencies {
+    compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.6@aar'
+    compile 'com.facebook.conceal:conceal:1.1.3@aar'
+}

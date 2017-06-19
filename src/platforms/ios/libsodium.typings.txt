@@ -1,0 +1,929 @@
+
+declare function _crypto_generichash_blake2b_pick_best_implementation(): number;
+
+declare function _crypto_onetimeauth_poly1305_pick_best_implementation(): number;
+
+declare function _crypto_pwhash_argon2i_pick_best_implementation(): number;
+
+declare function _crypto_scalarmult_curve25519_pick_best_implementation(): number;
+
+declare function _crypto_stream_chacha20_pick_best_implementation(): number;
+
+declare function _sodium_alloc_init(): number;
+
+declare function _sodium_runtime_get_cpu_features(): number;
+
+declare function crypto_aead_aes256gcm_abytes(): number;
+
+declare function crypto_aead_aes256gcm_beforenm(ctx_: interop.Pointer | interop.Reference<interop.Reference<number>>, k: string): number;
+
+declare function crypto_aead_aes256gcm_decrypt(m: string, mlen_p: interop.Pointer | interop.Reference<number>, nsec: string, c: string, clen: number, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_aes256gcm_decrypt_afternm(m: string, mlen_p: interop.Pointer | interop.Reference<number>, nsec: string, c: string, clen: number, ad: string, adlen: number, npub: string, ctx_: interop.Pointer | interop.Reference<interop.Reference<number>>): number;
+
+declare function crypto_aead_aes256gcm_decrypt_detached(m: string, nsec: string, c: string, clen: number, mac: string, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_aes256gcm_decrypt_detached_afternm(m: string, nsec: string, c: string, clen: number, mac: string, ad: string, adlen: number, npub: string, ctx_: interop.Pointer | interop.Reference<interop.Reference<number>>): number;
+
+declare function crypto_aead_aes256gcm_encrypt(c: string, clen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_aes256gcm_encrypt_afternm(c: string, clen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, ctx_: interop.Pointer | interop.Reference<interop.Reference<number>>): number;
+
+declare function crypto_aead_aes256gcm_encrypt_detached(c: string, mac: string, maclen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_aes256gcm_encrypt_detached_afternm(c: string, mac: string, maclen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, ctx_: interop.Pointer | interop.Reference<interop.Reference<number>>): number;
+
+declare function crypto_aead_aes256gcm_is_available(): number;
+
+declare function crypto_aead_aes256gcm_keybytes(): number;
+
+declare function crypto_aead_aes256gcm_npubbytes(): number;
+
+declare function crypto_aead_aes256gcm_nsecbytes(): number;
+
+declare function crypto_aead_aes256gcm_statebytes(): number;
+
+declare function crypto_aead_chacha20poly1305_abytes(): number;
+
+declare function crypto_aead_chacha20poly1305_decrypt(m: string, mlen_p: interop.Pointer | interop.Reference<number>, nsec: string, c: string, clen: number, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_decrypt_detached(m: string, nsec: string, c: string, clen: number, mac: string, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_encrypt(c: string, clen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_encrypt_detached(c: string, mac: string, maclen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_abytes(): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_decrypt(m: string, mlen_p: interop.Pointer | interop.Reference<number>, nsec: string, c: string, clen: number, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_decrypt_detached(m: string, nsec: string, c: string, clen: number, mac: string, ad: string, adlen: number, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_encrypt(c: string, clen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_encrypt_detached(c: string, mac: string, maclen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, ad: string, adlen: number, nsec: string, npub: string, k: string): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_keybytes(): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_npubbytes(): number;
+
+declare function crypto_aead_chacha20poly1305_ietf_nsecbytes(): number;
+
+declare function crypto_aead_chacha20poly1305_keybytes(): number;
+
+declare function crypto_aead_chacha20poly1305_npubbytes(): number;
+
+declare function crypto_aead_chacha20poly1305_nsecbytes(): number;
+
+declare function crypto_auth(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_bytes(): number;
+
+declare function crypto_auth_hmacsha256(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_hmacsha256_bytes(): number;
+
+declare function crypto_auth_hmacsha256_final(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha256_state>, out: string): number;
+
+declare function crypto_auth_hmacsha256_init(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha256_state>, key: string, keylen: number): number;
+
+declare function crypto_auth_hmacsha256_keybytes(): number;
+
+interface crypto_auth_hmacsha256_state {
+	ictx: crypto_hash_sha256_state;
+	octx: crypto_hash_sha256_state;
+}
+declare var crypto_auth_hmacsha256_state: interop.StructType<crypto_auth_hmacsha256_state>;
+
+declare function crypto_auth_hmacsha256_statebytes(): number;
+
+declare function crypto_auth_hmacsha256_update(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha256_state>, _in: string, inlen: number): number;
+
+declare function crypto_auth_hmacsha256_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_hmacsha512(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_hmacsha512256(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_hmacsha512256_bytes(): number;
+
+declare function crypto_auth_hmacsha512256_final(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, out: string): number;
+
+declare function crypto_auth_hmacsha512256_init(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, key: string, keylen: number): number;
+
+declare function crypto_auth_hmacsha512256_keybytes(): number;
+
+declare function crypto_auth_hmacsha512256_statebytes(): number;
+
+declare function crypto_auth_hmacsha512256_update(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, _in: string, inlen: number): number;
+
+declare function crypto_auth_hmacsha512256_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_hmacsha512_bytes(): number;
+
+declare function crypto_auth_hmacsha512_final(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, out: string): number;
+
+declare function crypto_auth_hmacsha512_init(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, key: string, keylen: number): number;
+
+declare function crypto_auth_hmacsha512_keybytes(): number;
+
+interface crypto_auth_hmacsha512_state {
+	ictx: crypto_hash_sha512_state;
+	octx: crypto_hash_sha512_state;
+}
+declare var crypto_auth_hmacsha512_state: interop.StructType<crypto_auth_hmacsha512_state>;
+
+declare function crypto_auth_hmacsha512_statebytes(): number;
+
+declare function crypto_auth_hmacsha512_update(state: interop.Pointer | interop.Reference<crypto_auth_hmacsha512_state>, _in: string, inlen: number): number;
+
+declare function crypto_auth_hmacsha512_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_auth_keybytes(): number;
+
+declare function crypto_auth_primitive(): string;
+
+declare function crypto_auth_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_box(c: string, m: string, mlen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_afternm(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_box_beforenm(k: string, pk: string, sk: string): number;
+
+declare function crypto_box_beforenmbytes(): number;
+
+declare function crypto_box_boxzerobytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305(c: string, m: string, mlen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_afternm(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_beforenm(k: string, pk: string, sk: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_beforenmbytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_boxzerobytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_keypair(pk: string, sk: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_macbytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_noncebytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_open(m: string, c: string, clen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_open_afternm(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_publickeybytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_secretkeybytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_seed_keypair(pk: string, sk: string, seed: string): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_seedbytes(): number;
+
+declare function crypto_box_curve25519xsalsa20poly1305_zerobytes(): number;
+
+declare function crypto_box_detached(c: string, mac: string, m: string, mlen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_detached_afternm(c: string, mac: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_box_easy(c: string, m: string, mlen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_easy_afternm(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_box_keypair(pk: string, sk: string): number;
+
+declare function crypto_box_macbytes(): number;
+
+declare function crypto_box_noncebytes(): number;
+
+declare function crypto_box_open(m: string, c: string, clen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_open_afternm(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_box_open_detached(m: string, c: string, mac: string, clen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_open_detached_afternm(m: string, c: string, mac: string, clen: number, n: string, k: string): number;
+
+declare function crypto_box_open_easy(m: string, c: string, clen: number, n: string, pk: string, sk: string): number;
+
+declare function crypto_box_open_easy_afternm(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_box_primitive(): string;
+
+declare function crypto_box_publickeybytes(): number;
+
+declare function crypto_box_seal(c: string, m: string, mlen: number, pk: string): number;
+
+declare function crypto_box_seal_open(m: string, c: string, clen: number, pk: string, sk: string): number;
+
+declare function crypto_box_sealbytes(): number;
+
+declare function crypto_box_secretkeybytes(): number;
+
+declare function crypto_box_seed_keypair(pk: string, sk: string, seed: string): number;
+
+declare function crypto_box_seedbytes(): number;
+
+declare function crypto_box_zerobytes(): number;
+
+declare function crypto_core_curve25519_ref10_fe_0(p1: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_1(p1: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_add(p1: interop.Reference<number>, p2: interop.Reference<number>, p3: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_cmov(p1: interop.Reference<number>, p2: interop.Reference<number>, p3: number): void;
+
+declare function crypto_core_curve25519_ref10_fe_copy(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_frombytes(p1: interop.Reference<number>, p2: string): void;
+
+declare function crypto_core_curve25519_ref10_fe_invert(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_isnegative(p1: interop.Reference<number>): number;
+
+declare function crypto_core_curve25519_ref10_fe_isnonzero(p1: interop.Reference<number>): number;
+
+declare function crypto_core_curve25519_ref10_fe_mul(p1: interop.Reference<number>, p2: interop.Reference<number>, p3: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_neg(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_pow22523(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_sq(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_sq2(p1: interop.Reference<number>, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_sub(p1: interop.Reference<number>, p2: interop.Reference<number>, p3: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_fe_tobytes(p1: string, p2: interop.Reference<number>): void;
+
+declare function crypto_core_curve25519_ref10_ge_add(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_cached>): void;
+
+interface crypto_core_curve25519_ref10_ge_cached {
+	YplusX: interop.Reference<number>;
+	YminusX: interop.Reference<number>;
+	Z: interop.Reference<number>;
+	T2d: interop.Reference<number>;
+}
+declare var crypto_core_curve25519_ref10_ge_cached: interop.StructType<crypto_core_curve25519_ref10_ge_cached>;
+
+declare function crypto_core_curve25519_ref10_ge_double_scalarmult_vartime(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>, p2: string, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p4: string): void;
+
+declare function crypto_core_curve25519_ref10_ge_frombytes_negate_vartime(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p2: string): number;
+
+declare function crypto_core_curve25519_ref10_ge_madd(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_precomp>): void;
+
+declare function crypto_core_curve25519_ref10_ge_msub(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_precomp>): void;
+
+interface crypto_core_curve25519_ref10_ge_p1p1 {
+	X: interop.Reference<number>;
+	Y: interop.Reference<number>;
+	Z: interop.Reference<number>;
+	T: interop.Reference<number>;
+}
+declare var crypto_core_curve25519_ref10_ge_p1p1: interop.StructType<crypto_core_curve25519_ref10_ge_p1p1>;
+
+declare function crypto_core_curve25519_ref10_ge_p1p1_to_p2(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p1p1_to_p3(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>): void;
+
+interface crypto_core_curve25519_ref10_ge_p2 {
+	X: interop.Reference<number>;
+	Y: interop.Reference<number>;
+	Z: interop.Reference<number>;
+}
+declare var crypto_core_curve25519_ref10_ge_p2: interop.StructType<crypto_core_curve25519_ref10_ge_p2>;
+
+declare function crypto_core_curve25519_ref10_ge_p2_0(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p2_dbl(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>): void;
+
+interface crypto_core_curve25519_ref10_ge_p3 {
+	X: interop.Reference<number>;
+	Y: interop.Reference<number>;
+	Z: interop.Reference<number>;
+	T: interop.Reference<number>;
+}
+declare var crypto_core_curve25519_ref10_ge_p3: interop.StructType<crypto_core_curve25519_ref10_ge_p3>;
+
+declare function crypto_core_curve25519_ref10_ge_p3_0(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p3_dbl(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p3_to_cached(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_cached>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p3_to_p2(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+declare function crypto_core_curve25519_ref10_ge_p3_tobytes(p1: string, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+interface crypto_core_curve25519_ref10_ge_precomp {
+	yplusx: interop.Reference<number>;
+	yminusx: interop.Reference<number>;
+	xy2d: interop.Reference<number>;
+}
+declare var crypto_core_curve25519_ref10_ge_precomp: interop.StructType<crypto_core_curve25519_ref10_ge_precomp>;
+
+declare function crypto_core_curve25519_ref10_ge_precomp_0(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_precomp>): void;
+
+declare function crypto_core_curve25519_ref10_ge_scalarmult_base(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p2: string): void;
+
+declare function crypto_core_curve25519_ref10_ge_scalarmult_vartime(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p2: string, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>): void;
+
+declare function crypto_core_curve25519_ref10_ge_sub(p1: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p1p1>, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p3>, p3: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_cached>): void;
+
+declare function crypto_core_curve25519_ref10_ge_tobytes(p1: string, p2: interop.Pointer | interop.Reference<crypto_core_curve25519_ref10_ge_p2>): void;
+
+declare function crypto_core_curve25519_ref10_sc_muladd(p1: string, p2: string, p3: string, p4: string): void;
+
+declare function crypto_core_curve25519_ref10_sc_reduce(p1: string): void;
+
+declare function crypto_core_hchacha20(out: string, _in: string, k: string, c: string): number;
+
+declare function crypto_core_hchacha20_constbytes(): number;
+
+declare function crypto_core_hchacha20_inputbytes(): number;
+
+declare function crypto_core_hchacha20_keybytes(): number;
+
+declare function crypto_core_hchacha20_outputbytes(): number;
+
+declare function crypto_core_hsalsa20(out: string, _in: string, k: string, c: string): number;
+
+declare function crypto_core_hsalsa20_constbytes(): number;
+
+declare function crypto_core_hsalsa20_inputbytes(): number;
+
+declare function crypto_core_hsalsa20_keybytes(): number;
+
+declare function crypto_core_hsalsa20_outputbytes(): number;
+
+declare function crypto_core_salsa20(out: string, _in: string, k: string, c: string): number;
+
+declare function crypto_core_salsa2012(out: string, _in: string, k: string, c: string): number;
+
+declare function crypto_core_salsa2012_constbytes(): number;
+
+declare function crypto_core_salsa2012_inputbytes(): number;
+
+declare function crypto_core_salsa2012_keybytes(): number;
+
+declare function crypto_core_salsa2012_outputbytes(): number;
+
+declare function crypto_core_salsa208(out: string, _in: string, k: string, c: string): number;
+
+declare function crypto_core_salsa208_constbytes(): number;
+
+declare function crypto_core_salsa208_inputbytes(): number;
+
+declare function crypto_core_salsa208_keybytes(): number;
+
+declare function crypto_core_salsa208_outputbytes(): number;
+
+declare function crypto_core_salsa20_constbytes(): number;
+
+declare function crypto_core_salsa20_inputbytes(): number;
+
+declare function crypto_core_salsa20_keybytes(): number;
+
+declare function crypto_core_salsa20_outputbytes(): number;
+
+declare function crypto_generichash(out: string, outlen: number, _in: string, inlen: number, key: string, keylen: number): number;
+
+declare function crypto_generichash_blake2b(out: string, outlen: number, _in: string, inlen: number, key: string, keylen: number): number;
+
+declare function crypto_generichash_blake2b_bytes(): number;
+
+declare function crypto_generichash_blake2b_bytes_max(): number;
+
+declare function crypto_generichash_blake2b_bytes_min(): number;
+
+declare function crypto_generichash_blake2b_final(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, out: string, outlen: number): number;
+
+declare function crypto_generichash_blake2b_init(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, key: string, keylen: number, outlen: number): number;
+
+declare function crypto_generichash_blake2b_init_salt_personal(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, key: string, keylen: number, outlen: number, salt: string, personal: string): number;
+
+declare function crypto_generichash_blake2b_keybytes(): number;
+
+declare function crypto_generichash_blake2b_keybytes_max(): number;
+
+declare function crypto_generichash_blake2b_keybytes_min(): number;
+
+declare function crypto_generichash_blake2b_personalbytes(): number;
+
+declare function crypto_generichash_blake2b_salt_personal(out: string, outlen: number, _in: string, inlen: number, key: string, keylen: number, salt: string, personal: string): number;
+
+declare function crypto_generichash_blake2b_saltbytes(): number;
+
+interface crypto_generichash_blake2b_state {
+	h: interop.Reference<number>;
+	t: interop.Reference<number>;
+	f: interop.Reference<number>;
+	buf: interop.Reference<number>;
+	buflen: number;
+	last_node: number;
+}
+declare var crypto_generichash_blake2b_state: interop.StructType<crypto_generichash_blake2b_state>;
+
+declare function crypto_generichash_blake2b_statebytes(): number;
+
+declare function crypto_generichash_blake2b_update(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, _in: string, inlen: number): number;
+
+declare function crypto_generichash_bytes(): number;
+
+declare function crypto_generichash_bytes_max(): number;
+
+declare function crypto_generichash_bytes_min(): number;
+
+declare function crypto_generichash_final(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, out: string, outlen: number): number;
+
+declare function crypto_generichash_init(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, key: string, keylen: number, outlen: number): number;
+
+declare function crypto_generichash_keybytes(): number;
+
+declare function crypto_generichash_keybytes_max(): number;
+
+declare function crypto_generichash_keybytes_min(): number;
+
+declare function crypto_generichash_primitive(): string;
+
+declare function crypto_generichash_statebytes(): number;
+
+declare function crypto_generichash_update(state: interop.Pointer | interop.Reference<crypto_generichash_blake2b_state>, _in: string, inlen: number): number;
+
+declare function crypto_hash(out: string, _in: string, inlen: number): number;
+
+declare function crypto_hash_bytes(): number;
+
+declare function crypto_hash_primitive(): string;
+
+declare function crypto_hash_sha256(out: string, _in: string, inlen: number): number;
+
+declare function crypto_hash_sha256_bytes(): number;
+
+declare function crypto_hash_sha256_final(state: interop.Pointer | interop.Reference<crypto_hash_sha256_state>, out: string): number;
+
+declare function crypto_hash_sha256_init(state: interop.Pointer | interop.Reference<crypto_hash_sha256_state>): number;
+
+interface crypto_hash_sha256_state {
+	state: interop.Reference<number>;
+	count: number;
+	buf: interop.Reference<number>;
+}
+declare var crypto_hash_sha256_state: interop.StructType<crypto_hash_sha256_state>;
+
+declare function crypto_hash_sha256_statebytes(): number;
+
+declare function crypto_hash_sha256_update(state: interop.Pointer | interop.Reference<crypto_hash_sha256_state>, _in: string, inlen: number): number;
+
+declare function crypto_hash_sha512(out: string, _in: string, inlen: number): number;
+
+declare function crypto_hash_sha512_bytes(): number;
+
+declare function crypto_hash_sha512_final(state: interop.Pointer | interop.Reference<crypto_hash_sha512_state>, out: string): number;
+
+declare function crypto_hash_sha512_init(state: interop.Pointer | interop.Reference<crypto_hash_sha512_state>): number;
+
+interface crypto_hash_sha512_state {
+	state: interop.Reference<number>;
+	count: interop.Reference<number>;
+	buf: interop.Reference<number>;
+}
+declare var crypto_hash_sha512_state: interop.StructType<crypto_hash_sha512_state>;
+
+declare function crypto_hash_sha512_statebytes(): number;
+
+declare function crypto_hash_sha512_update(state: interop.Pointer | interop.Reference<crypto_hash_sha512_state>, _in: string, inlen: number): number;
+
+declare function crypto_onetimeauth(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_onetimeauth_bytes(): number;
+
+declare function crypto_onetimeauth_final(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, out: string): number;
+
+declare function crypto_onetimeauth_init(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, key: string): number;
+
+declare function crypto_onetimeauth_keybytes(): number;
+
+declare function crypto_onetimeauth_poly1305(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_onetimeauth_poly1305_bytes(): number;
+
+declare function crypto_onetimeauth_poly1305_final(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, out: string): number;
+
+declare function crypto_onetimeauth_poly1305_init(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, key: string): number;
+
+declare function crypto_onetimeauth_poly1305_keybytes(): number;
+
+interface crypto_onetimeauth_poly1305_state {
+	opaque: interop.Reference<number>;
+}
+declare var crypto_onetimeauth_poly1305_state: interop.StructType<crypto_onetimeauth_poly1305_state>;
+
+declare function crypto_onetimeauth_poly1305_update(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, _in: string, inlen: number): number;
+
+declare function crypto_onetimeauth_poly1305_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_onetimeauth_primitive(): string;
+
+declare function crypto_onetimeauth_statebytes(): number;
+
+declare function crypto_onetimeauth_update(state: interop.Pointer | interop.Reference<crypto_onetimeauth_poly1305_state>, _in: string, inlen: number): number;
+
+declare function crypto_onetimeauth_verify(h: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_pwhash(out: string, outlen: number, passwd: string, passwdlen: number, salt: string, opslimit: number, memlimit: number, alg: number): number;
+
+declare function crypto_pwhash_alg_argon2i13(): number;
+
+declare function crypto_pwhash_alg_default(): number;
+
+declare function crypto_pwhash_argon2i(out: string, outlen: number, passwd: string, passwdlen: number, salt: string, opslimit: number, memlimit: number, alg: number): number;
+
+declare function crypto_pwhash_argon2i_alg_argon2i13(): number;
+
+declare function crypto_pwhash_argon2i_memlimit_interactive(): number;
+
+declare function crypto_pwhash_argon2i_memlimit_moderate(): number;
+
+declare function crypto_pwhash_argon2i_memlimit_sensitive(): number;
+
+declare function crypto_pwhash_argon2i_opslimit_interactive(): number;
+
+declare function crypto_pwhash_argon2i_opslimit_moderate(): number;
+
+declare function crypto_pwhash_argon2i_opslimit_sensitive(): number;
+
+declare function crypto_pwhash_argon2i_saltbytes(): number;
+
+declare function crypto_pwhash_argon2i_str(out: interop.Reference<number>, passwd: string, passwdlen: number, opslimit: number, memlimit: number): number;
+
+declare function crypto_pwhash_argon2i_str_verify(str: interop.Reference<number>, passwd: string, passwdlen: number): number;
+
+declare function crypto_pwhash_argon2i_strbytes(): number;
+
+declare function crypto_pwhash_argon2i_strprefix(): string;
+
+declare function crypto_pwhash_memlimit_interactive(): number;
+
+declare function crypto_pwhash_memlimit_moderate(): number;
+
+declare function crypto_pwhash_memlimit_sensitive(): number;
+
+declare function crypto_pwhash_opslimit_interactive(): number;
+
+declare function crypto_pwhash_opslimit_moderate(): number;
+
+declare function crypto_pwhash_opslimit_sensitive(): number;
+
+declare function crypto_pwhash_primitive(): string;
+
+declare function crypto_pwhash_saltbytes(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256(out: string, outlen: number, passwd: string, passwdlen: number, salt: string, opslimit: number, memlimit: number): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_ll(passwd: string, passwdlen: number, salt: string, saltlen: number, N: number, r: number, p: number, buf: string, buflen: number): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_memlimit_interactive(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_memlimit_sensitive(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_opslimit_interactive(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_opslimit_sensitive(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_saltbytes(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_str(out: interop.Reference<number>, passwd: string, passwdlen: number, opslimit: number, memlimit: number): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_str_verify(str: interop.Reference<number>, passwd: string, passwdlen: number): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_strbytes(): number;
+
+declare function crypto_pwhash_scryptsalsa208sha256_strprefix(): string;
+
+declare function crypto_pwhash_str(out: interop.Reference<number>, passwd: string, passwdlen: number, opslimit: number, memlimit: number): number;
+
+declare function crypto_pwhash_str_verify(str: interop.Reference<number>, passwd: string, passwdlen: number): number;
+
+declare function crypto_pwhash_strbytes(): number;
+
+declare function crypto_pwhash_strprefix(): string;
+
+declare function crypto_scalarmult(q: string, n: string, p: string): number;
+
+declare function crypto_scalarmult_base(q: string, n: string): number;
+
+declare function crypto_scalarmult_bytes(): number;
+
+declare function crypto_scalarmult_curve25519(q: string, n: string, p: string): number;
+
+declare function crypto_scalarmult_curve25519_base(q: string, n: string): number;
+
+declare function crypto_scalarmult_curve25519_bytes(): number;
+
+declare function crypto_scalarmult_curve25519_scalarbytes(): number;
+
+declare function crypto_scalarmult_primitive(): string;
+
+declare function crypto_scalarmult_scalarbytes(): number;
+
+declare function crypto_secretbox(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_boxzerobytes(): number;
+
+declare function crypto_secretbox_detached(c: string, mac: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_easy(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_keybytes(): number;
+
+declare function crypto_secretbox_macbytes(): number;
+
+declare function crypto_secretbox_noncebytes(): number;
+
+declare function crypto_secretbox_open(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_open_detached(m: string, c: string, mac: string, clen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_open_easy(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_primitive(): string;
+
+declare function crypto_secretbox_xsalsa20poly1305(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_boxzerobytes(): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_keybytes(): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_macbytes(): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_noncebytes(): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_open(m: string, c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_secretbox_xsalsa20poly1305_zerobytes(): number;
+
+declare function crypto_secretbox_zerobytes(): number;
+
+declare function crypto_shorthash(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_shorthash_bytes(): number;
+
+declare function crypto_shorthash_keybytes(): number;
+
+declare function crypto_shorthash_primitive(): string;
+
+declare function crypto_shorthash_siphash24(out: string, _in: string, inlen: number, k: string): number;
+
+declare function crypto_shorthash_siphash24_bytes(): number;
+
+declare function crypto_shorthash_siphash24_keybytes(): number;
+
+declare function crypto_sign(sm: string, smlen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, sk: string): number;
+
+declare function crypto_sign_bytes(): number;
+
+declare function crypto_sign_detached(sig: string, siglen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, sk: string): number;
+
+declare function crypto_sign_ed25519(sm: string, smlen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, sk: string): number;
+
+declare function crypto_sign_ed25519_bytes(): number;
+
+declare function crypto_sign_ed25519_detached(sig: string, siglen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, sk: string): number;
+
+declare function crypto_sign_ed25519_keypair(pk: string, sk: string): number;
+
+declare function crypto_sign_ed25519_open(m: string, mlen_p: interop.Pointer | interop.Reference<number>, sm: string, smlen: number, pk: string): number;
+
+declare function crypto_sign_ed25519_pk_to_curve25519(curve25519_pk: string, ed25519_pk: string): number;
+
+declare function crypto_sign_ed25519_publickeybytes(): number;
+
+declare function crypto_sign_ed25519_secretkeybytes(): number;
+
+declare function crypto_sign_ed25519_seed_keypair(pk: string, sk: string, seed: string): number;
+
+declare function crypto_sign_ed25519_seedbytes(): number;
+
+declare function crypto_sign_ed25519_sk_to_curve25519(curve25519_sk: string, ed25519_sk: string): number;
+
+declare function crypto_sign_ed25519_sk_to_pk(pk: string, sk: string): number;
+
+declare function crypto_sign_ed25519_sk_to_seed(seed: string, sk: string): number;
+
+declare function crypto_sign_ed25519_verify_detached(sig: string, m: string, mlen: number, pk: string): number;
+
+declare function crypto_sign_edwards25519sha512batch(sm: string, smlen_p: interop.Pointer | interop.Reference<number>, m: string, mlen: number, sk: string): number;
+
+declare function crypto_sign_edwards25519sha512batch_keypair(pk: string, sk: string): number;
+
+declare function crypto_sign_edwards25519sha512batch_open(m: string, mlen_p: interop.Pointer | interop.Reference<number>, sm: string, smlen: number, pk: string): number;
+
+declare function crypto_sign_keypair(pk: string, sk: string): number;
+
+declare function crypto_sign_open(m: string, mlen_p: interop.Pointer | interop.Reference<number>, sm: string, smlen: number, pk: string): number;
+
+declare function crypto_sign_primitive(): string;
+
+declare function crypto_sign_publickeybytes(): number;
+
+declare function crypto_sign_secretkeybytes(): number;
+
+declare function crypto_sign_seed_keypair(pk: string, sk: string, seed: string): number;
+
+declare function crypto_sign_seedbytes(): number;
+
+declare function crypto_sign_verify_detached(sig: string, m: string, mlen: number, pk: string): number;
+
+declare function crypto_stream(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_aes128ctr(out: string, outlen: number, n: string, k: string): number;
+
+declare function crypto_stream_aes128ctr_afternm(out: string, len: number, nonce: string, c: string): number;
+
+declare function crypto_stream_aes128ctr_beforenm(c: string, k: string): number;
+
+declare function crypto_stream_aes128ctr_beforenmbytes(): number;
+
+declare function crypto_stream_aes128ctr_keybytes(): number;
+
+declare function crypto_stream_aes128ctr_noncebytes(): number;
+
+declare function crypto_stream_aes128ctr_xor(out: string, _in: string, inlen: number, n: string, k: string): number;
+
+declare function crypto_stream_aes128ctr_xor_afternm(out: string, _in: string, len: number, nonce: string, c: string): number;
+
+declare function crypto_stream_chacha20(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_chacha20_ietf(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_chacha20_ietf_noncebytes(): number;
+
+declare function crypto_stream_chacha20_ietf_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_chacha20_ietf_xor_ic(c: string, m: string, mlen: number, n: string, ic: number, k: string): number;
+
+declare function crypto_stream_chacha20_keybytes(): number;
+
+declare function crypto_stream_chacha20_noncebytes(): number;
+
+declare function crypto_stream_chacha20_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_chacha20_xor_ic(c: string, m: string, mlen: number, n: string, ic: number, k: string): number;
+
+declare function crypto_stream_keybytes(): number;
+
+declare function crypto_stream_noncebytes(): number;
+
+declare function crypto_stream_primitive(): string;
+
+declare function crypto_stream_salsa20(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa2012(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa2012_keybytes(): number;
+
+declare function crypto_stream_salsa2012_noncebytes(): number;
+
+declare function crypto_stream_salsa2012_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa208(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa208_keybytes(): number;
+
+declare function crypto_stream_salsa208_noncebytes(): number;
+
+declare function crypto_stream_salsa208_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa20_keybytes(): number;
+
+declare function crypto_stream_salsa20_noncebytes(): number;
+
+declare function crypto_stream_salsa20_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_salsa20_xor_ic(c: string, m: string, mlen: number, n: string, ic: number, k: string): number;
+
+declare function crypto_stream_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_xsalsa20(c: string, clen: number, n: string, k: string): number;
+
+declare function crypto_stream_xsalsa20_keybytes(): number;
+
+declare function crypto_stream_xsalsa20_noncebytes(): number;
+
+declare function crypto_stream_xsalsa20_xor(c: string, m: string, mlen: number, n: string, k: string): number;
+
+declare function crypto_stream_xsalsa20_xor_ic(c: string, m: string, mlen: number, n: string, ic: number, k: string): number;
+
+declare function crypto_verify_16(x: string, y: string): number;
+
+declare function crypto_verify_16_bytes(): number;
+
+declare function crypto_verify_32(x: string, y: string): number;
+
+declare function crypto_verify_32_bytes(): number;
+
+declare function crypto_verify_64(x: string, y: string): number;
+
+declare function crypto_verify_64_bytes(): number;
+
+declare var libsodiumVersionNumber: number;
+
+declare var libsodiumVersionString: interop.Reference<number>;
+
+declare function randombytes(buf: string, buf_len: number): void;
+
+declare function randombytes_buf(buf: interop.Pointer | interop.Reference<any>, size: number): void;
+
+declare function randombytes_close(): number;
+
+interface randombytes_implementation {
+	implementation_name: interop.FunctionReference<() => string>;
+	random: interop.FunctionReference<() => number>;
+	stir: interop.FunctionReference<() => void>;
+	uniform: interop.FunctionReference<(p1: number) => number>;
+	buf: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<any>, p2: number) => void>;
+	close: interop.FunctionReference<() => number>;
+}
+declare var randombytes_implementation: interop.StructType<randombytes_implementation>;
+
+declare function randombytes_implementation_name(): string;
+
+declare function randombytes_random(): number;
+
+declare var randombytes_salsa20_implementation: randombytes_implementation;
+
+declare function randombytes_set_implementation(impl: interop.Pointer | interop.Reference<randombytes_implementation>): number;
+
+declare function randombytes_stir(): void;
+
+declare var randombytes_sysrandom_implementation: randombytes_implementation;
+
+declare function randombytes_uniform(upper_bound: number): number;
+
+declare function sodium_add(a: string, b: string, len: number): void;
+
+declare function sodium_allocarray(count: number, size: number): interop.Pointer | interop.Reference<any>;
+
+declare function sodium_bin2hex(hex: string, hex_maxlen: number, bin: string, bin_len: number): string;
+
+declare function sodium_compare(b1_: string, b2_: string, len: number): number;
+
+declare function sodium_crit_enter(): number;
+
+declare function sodium_crit_leave(): number;
+
+declare function sodium_free(ptr: interop.Pointer | interop.Reference<any>): void;
+
+declare function sodium_hex2bin(bin: string, bin_maxlen: number, hex: string, hex_len: number, ignore: string, bin_len: interop.Pointer | interop.Reference<number>, hex_end: interop.Pointer | interop.Reference<string>): number;
+
+declare function sodium_increment(n: string, nlen: number): void;
+
+declare function sodium_init(): number;
+
+declare function sodium_is_zero(n: string, nlen: number): number;
+
+declare function sodium_library_version_major(): number;
+
+declare function sodium_library_version_minor(): number;
+
+declare function sodium_malloc(size: number): interop.Pointer | interop.Reference<any>;
+
+declare function sodium_memcmp(b1_: interop.Pointer | interop.Reference<any>, b2_: interop.Pointer | interop.Reference<any>, len: number): number;
+
+declare function sodium_memzero(pnt: interop.Pointer | interop.Reference<any>, len: number): void;
+
+declare function sodium_mlock(addr: interop.Pointer | interop.Reference<any>, len: number): number;
+
+declare function sodium_mprotect_noaccess(ptr: interop.Pointer | interop.Reference<any>): number;
+
+declare function sodium_mprotect_readonly(ptr: interop.Pointer | interop.Reference<any>): number;
+
+declare function sodium_mprotect_readwrite(ptr: interop.Pointer | interop.Reference<any>): number;
+
+declare function sodium_munlock(addr: interop.Pointer | interop.Reference<any>, len: number): number;
+
+declare function sodium_runtime_has_aesni(): number;
+
+declare function sodium_runtime_has_avx(): number;
+
+declare function sodium_runtime_has_avx2(): number;
+
+declare function sodium_runtime_has_neon(): number;
+
+declare function sodium_runtime_has_pclmul(): number;
+
+declare function sodium_runtime_has_sse2(): number;
+
+declare function sodium_runtime_has_sse3(): number;
+
+declare function sodium_runtime_has_sse41(): number;
+
+declare function sodium_runtime_has_ssse3(): number;
+
+declare function sodium_version_string(): string;
