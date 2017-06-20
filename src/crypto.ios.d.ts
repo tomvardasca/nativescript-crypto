@@ -1,4 +1,5 @@
-export declare class NSCrypto {
+import { INSCryto } from './crypto.common';
+export declare class NSCrypto implements INSCryto {
     private crypto_pwhash_consts;
     private hashTypeLibsodiumFn;
     private rsaEncPaddingType;
@@ -15,12 +16,12 @@ export declare class NSCrypto {
     secureSymetricAEADkeyLength(): number;
     secureSymetricAEADnonceLength(): number;
     encryptSecureSymetricAEAD(key: string, plaint: string, aad: string, pnonce: string, alg?: string): {
-        ciphert: string;
+        cipherb: string;
         alg: string;
     };
-    decryptSecureSymetricAEAD(key: string, ciphert: string, aad: string, pnonce: string, alg?: string): string;
+    decryptSecureSymetricAEAD(key: string, cipherb: string, aad: string, pnonce: string, alg?: string): string;
     encryptAES256GCM(key: string, plaint: string, aad: string, iv: string, tagLength?: number): {
-        ciphert: string;
+        cipherb: string;
         atag: string;
     };
     decryptAES256GCM(key: string, cipherb: string, aad: string, iv: string, atag: string): string;

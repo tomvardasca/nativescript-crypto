@@ -24,12 +24,12 @@ export interface INSCryto {
     pnonce: string,
     alg?: string
   ): {
-    ciphert: string;
+    cipherb: string;
     alg: string;
   };
   decryptSecureSymetricAEAD(
     key: string,
-    ciphert: string,
+    cipherb: string,
     aad: string,
     pnonce: string,
     alg?: string

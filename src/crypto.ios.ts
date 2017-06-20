@@ -231,7 +231,7 @@ export class NSCrypto implements INSCryto {
     aad: string,
     pnonce: string,
     alg?: string
-  ): { ciphert: string; alg: string } {
+  ): { cipherb: string; alg: string } {
     let ciphert;
     let cipherb_length = new interop.Reference<number>();
 
@@ -255,10 +255,10 @@ export class NSCrypto implements INSCryto {
         base64toBytes(key).bytes
       );
       return {
-        ciphert: toBase64(ciphert, cipherb_length.value),
+        cipherb: toBase64(ciphert, cipherb_length.value),
         alg: 'aes256gcm'
       };
-    } else if (alg === 'aes256gcm' || !alg) {
+    } else if (alg === 'chacha20poly1305_ietf' || !alg) {
       ciphert = interop.alloc(
         (plaint.length + crypto_aead_chacha20poly1305_ietf_abytes()) *
           interop.sizeof(interop.types.unichar)
@@ -275,7 +275,7 @@ export class NSCrypto implements INSCryto {
         base64toBytes(key).bytes
       );
       return {
-        ciphert: toBase64(ciphert, cipherb_length.value),
+        cipherb: toBase64(ciphert, cipherb_length.value),
         alg: 'chacha20poly1305_ietf'
       };
     } else {
@@ -286,7 +286,7 @@ export class NSCrypto implements INSCryto {
   }
   decryptSecureSymetricAEAD(
     key: string,
-    ciphert: string,
+    cipherb: string,
     aad: string,
     pnonce: string,
     alg?: string
@@ -298,29 +298,31 @@ export class NSCrypto implements INSCryto {
       crypto_aead_aes256gcm_is_available() !== 0 &&
       (alg === 'aes256gcm' || !alg)
     ) {
+      let cipherb_p = base64toBytes(cipherb);
       plaint = interop.alloc(
-        ciphert.length * interop.sizeof(interop.types.unichar)
+        (cipherb_p.length - crypto_aead_chacha20poly1305_ietf_abytes()) *
+          interop.sizeof(interop.types.unichar)
       );
       crypto_aead_aes256gcm_decrypt(
         plaint,
         plaint_length,
-        ciphert,
-        ciphert.length,
+        cipherb_p,
+        cipherb_p.length,
         aad,
         aad.length,
         null,
         base64toBytes(pnonce).bytes,
         base64toBytes(key).bytes
       );
-    } else if (alg === 'aes256gcm' || !alg) {
+    } else if (alg === 'chacha20poly1305_ietf' || !alg) {
       plaint = interop.alloc(
-        ciphert.length * interop.sizeof(interop.types.unichar)
+        cipherb.length * interop.sizeof(interop.types.unichar)
       );
       crypto_aead_chacha20poly1305_ietf_decrypt(
         plaint,
         plaint_length,
-        ciphert,
-        ciphert.length,
+        cipherb,
+        cipherb.length,
         aad,
         aad.length,
         null,
@@ -329,7 +331,7 @@ export class NSCrypto implements INSCryto {
       );
     } else {
       throw new Error(
-        `encryptSecureSymetricAEAD algorith ${alg} not found or is not available in this hardware`
+        `decryptSecureSymetricAEAD algorith ${alg} not found or is not available in this hardware`
       );
     }
     return <any>new NSString({
@@ -338,6 +340,7 @@ export class NSCrypto implements INSCryto {
       encoding: NSUTF8StringEncoding
     });
   }
+
   encryptAES256GCM(
     key: string,
     plaint: string,
@@ -345,7 +348,7 @@ export class NSCrypto implements INSCryto {
     iv: string,
     tagLength: number = 128
   ): {
-    ciphert: string;
+    cipherb: string;
     atag: string;
   } {
     let plaintData: NSData = (<any>plaint).dataUsingEncoding(
@@ -367,7 +370,7 @@ export class NSCrypto implements INSCryto {
       keyData
     );
     return {
-      ciphert: toBase64(
+      cipherb: toBase64(
         cipheredData.cipheredBuffer,
         cipheredData.cipheredBufferLength
       ),
