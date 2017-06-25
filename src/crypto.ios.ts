@@ -351,10 +351,12 @@ export class NSCrypto implements INSCryto {
     cipherb: string;
     atag: string;
   } {
-    let plaintData: NSData = (<any>plaint).dataUsingEncoding(
-      NSUTF8StringEncoding
-    );
-    let aadData: NSData = (<any>aad).dataUsingEncoding(NSUTF8StringEncoding);
+    let plaintData: NSData = new NSString({
+      UTF8String: plaint
+    }).dataUsingEncoding(NSUTF8StringEncoding);
+    let aadData: NSData = new NSString({
+      UTF8String: aad
+    }).dataUsingEncoding(NSUTF8StringEncoding);
     let ivData = new NSData({
       base64EncodedString: iv,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
@@ -395,7 +397,9 @@ export class NSCrypto implements INSCryto {
       authenticationTag: atag_p.bytes,
       authenticationTagLength: atag_p.length
     });
-    let aadData: NSData = (<any>aad).dataUsingEncoding(NSUTF8StringEncoding);
+    let aadData: NSData = new NSString({
+      UTF8String: aad
+    }).dataUsingEncoding(NSUTF8StringEncoding);
     let ivData = new NSData({
       base64EncodedString: iv,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
@@ -442,7 +446,7 @@ export class NSCrypto implements INSCryto {
       privKey,
       SecPadding.kSecPaddingOAEP
     );
-    return encryptedMessage.base64String;
+    return clearMessage.base64String;
   }
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
     if (Object.keys(this.rsaSigDigestType).indexOf(digest_type) === -1) {
@@ -454,7 +458,7 @@ export class NSCrypto implements INSCryto {
     });
     let signature = clearMessage.signedWithDigestTypeError(
       privKey,
-      SecPadding.kSecPaddingOAEP
+      this.rsaSigDigestType[digest_type]
     );
     return signature.base64String;
   }
@@ -472,12 +476,12 @@ export class NSCrypto implements INSCryto {
       base64Encoded: messageb
     });
     let signature = new Signature({
-      base64Encoded: messageb
+      base64Encoded: signatureb
     });
     let verificationResult = clearMessage.verifyWithSignatureDigestTypeError(
       pubKey,
       signature,
-      SecPadding.kSecPaddingOAEP
+      this.rsaSigDigestType[digest_type]
     );
     return verificationResult.isSuccessful;
   }
@@ -535,9 +539,9 @@ export class NSCrypto implements INSCryto {
   }
 
   base64encode(input: string): string {
-    let plainData: NSData = (<any>input).dataUsingEncoding(
-      NSUTF8StringEncoding
-    );
+    let plainData: NSData = new NSString({
+      UTF8String: input
+    }).dataUsingEncoding(NSUTF8StringEncoding);
     return plainData.base64EncodedStringWithOptions(kNilOptions);
   }
   base64decode(input: string): string {
@@ -545,6 +549,9 @@ export class NSCrypto implements INSCryto {
       base64EncodedString: input,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    return data.base64EncodedStringWithOptions(0);
+    return <any>new NSString({
+      data: data,
+      encoding: NSUTF8StringEncoding
+    });
   }
 }

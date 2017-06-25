@@ -1,5 +1,9 @@
 import { INSCryto } from './crypto.common';
 export declare class NSCrypto implements INSCryto {
+    private crypto_pwhash_consts;
+    private _hashTypeLibsodiumNamespace;
+    private rsaEncPaddingType;
+    private rsaSigDigestType;
     hash(input: string, type: string): string;
     secureRandomBytes(length: number): string;
     deriveSecureKey(password: string, key_size: number, salt?: string, ops_limits?: number, mem_limits?: number, alg?: string): {

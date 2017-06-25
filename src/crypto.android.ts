@@ -26,32 +26,51 @@ const NativeGCMCipherInputStream =
 const FixedSizeByteArrayOutputStream =
   com.facebook.crypto.streams.FixedSizeByteArrayOutputStream;
 
-const _hashTypeLibsodiumNamespace = {
-  sha256: 'crypto_hash_sha256',
-  sha512: 'crypto_hash_sha512'
-};
-
-const crypto_pwhash_consts = {
-  scryptsalsa208sha256: {
-    mem_limits: {
-      min: 8192 * 7168 * 2,
-      max: 8192 * 9126 * 2
-    },
-    ops_limits: {
-      min: 768 * 1024 * 2,
-      max: 768 * 2048 * 2
-    }
-  }
-};
+const X509EncodedKeySpec = java.security.spec.X509EncodedKeySpec;
+const KeyFactory = java.security.KeyFactory;
+const PrivateKey = java.security.PrivateKey;
+const PublicKey = java.security.PublicKey;
+const Security = java.security.Security;
+const Signature = java.security.Signature;
+const Cipher = javax.crypto.Cipher;
 
 export class NSCrypto implements INSCryto {
+  private crypto_pwhash_consts = {
+    scryptsalsa208sha256: {
+      mem_limits: {
+        min: 8192 * 7168 * 2,
+        max: 8192 * 9126 * 2
+      },
+      ops_limits: {
+        min: 768 * 1024 * 2,
+        max: 768 * 2048 * 2
+      }
+    }
+  };
+
+  private _hashTypeLibsodiumNamespace = {
+    sha256: 'crypto_hash_sha256',
+    sha512: 'crypto_hash_sha512'
+  };
+
+  private rsaEncPaddingType = {
+    pkcs1: 'RSA/NONE/PKCS1Padding',
+    oaep: 'RSA/NONE/OAEPwithSHA-1andMGF1Padding'
+  };
+
+  private rsaSigDigestType = {
+    sha1: 'SHA1withRSA',
+    sha256: 'SHA256withRSA',
+    sha512: 'SHA512withRSA'
+  };
+
   hash(input: string, type: string): string {
-    if (Object.keys(_hashTypeLibsodiumNamespace).indexOf(type) === -1) {
+    if (Object.keys(this._hashTypeLibsodiumNamespace).indexOf(type) === -1) {
       throw new Error(`hash type "${type}" not found!`);
     }
     input = new java.lang.String(input).getBytes(StandardCharsets.UTF_8);
     Sodium.sodium_init();
-    let hash_libsodium_namespace = _hashTypeLibsodiumNamespace[type];
+    let hash_libsodium_namespace = this._hashTypeLibsodiumNamespace[type];
     let hash = Array.create(
       'byte',
       Sodium[hash_libsodium_namespace + '_bytes']()
@@ -90,18 +109,18 @@ export class NSCrypto implements INSCryto {
     alg = alg || 'scryptsalsa208sha256';
     if (!mem_limits) {
       const diff =
-        crypto_pwhash_consts[alg].mem_limits.max -
-        crypto_pwhash_consts[alg].mem_limits.min;
+        this.crypto_pwhash_consts[alg].mem_limits.max -
+        this.crypto_pwhash_consts[alg].mem_limits.min;
       mem_limits =
-        crypto_pwhash_consts[alg].mem_limits.min +
+        this.crypto_pwhash_consts[alg].mem_limits.min +
         Sodium.randombytes_uniform(diff + 1); // randombytes_uniform upper_bound is (excluded)
     }
     if (!ops_limits) {
       const diff =
-        crypto_pwhash_consts[alg].ops_limits.max -
-        crypto_pwhash_consts[alg].ops_limits.min;
+        this.crypto_pwhash_consts[alg].ops_limits.max -
+        this.crypto_pwhash_consts[alg].ops_limits.min;
       ops_limits =
-        crypto_pwhash_consts[alg].ops_limits.min +
+        this.crypto_pwhash_consts[alg].ops_limits.min +
         Sodium.randombytes_uniform(diff + 1); // randombytes_uniform upper_bound is (excluded)
     }
 
@@ -330,22 +349,41 @@ export class NSCrypto implements INSCryto {
   }
 
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
-    /*
-		        byte[] publicBytes = Base64.decode(PUBLIC_KEY, Base64.DEFAULT);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        PublicKey pubKey = keyFactory.generatePublic(keySpec);
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1PADDING"); //or try with "RSA"
-        cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-        encrypted = cipher.doFinal(txt.getBytes());
-        encoded = Base64.encodeToString(encrypted, Base64.DEFAULT); */
-    throw new Error('Method not implemented.');
+    pub_key_pem = pub_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
+    pub_key_pem = pub_key_pem.replace('-----END PUBLIC KEY-----', '');
+    let publicKeyBytes = Base64.decode(pub_key_pem, Base64.DEFAULT);
+    let keySpec = new X509EncodedKeySpec(publicKeyBytes);
+    let keyFactory = KeyFactory.getInstance('RSA');
+    let pubKey = keyFactory.generatePublic(keySpec);
+    let cipher = Cipher.getInstance(this.rsaEncPaddingType[padding]); // or try with "RSA"
+    cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+    let encrypted = cipher.doFinal(Base64.decode(plainb, Base64.DEFAULT));
+    return Base64.encodeToString(encrypted, Base64.DEFAULT);
   }
   decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string {
-    throw new Error('Method not implemented.');
+    priv_key_pem = priv_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
+    priv_key_pem = priv_key_pem.replace('-----END PUBLIC KEY-----', '');
+    let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
+    let keySpec = new X509EncodedKeySpec(privateKeyBytes);
+    let keyFactory = KeyFactory.getInstance('RSA');
+    let privKey = keyFactory.generatePrivate(keySpec);
+    let cipher = Cipher.getInstance(this.rsaEncPaddingType[padding]); // or try with "RSA"
+    cipher.init(Cipher.DECRYPT_MODE, privKey);
+    let paintb = cipher.doFinal(Base64.decode(cipherb, Base64.DEFAULT));
+    return Base64.encodeToString(paintb, Base64.DEFAULT);
   }
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
-    throw new Error('Method not implemented.');
+    priv_key_pem = priv_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
+    priv_key_pem = priv_key_pem.replace('-----END PUBLIC KEY-----', '');
+    let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
+    let keySpec = new X509EncodedKeySpec(privateKeyBytes);
+    let keyFactory = KeyFactory.getInstance('RSA');
+    let privKey = keyFactory.generatePrivate(keySpec);
+    let signature = Signature.getInstance(this.rsaSigDigestType[digest_type]);
+    signature.initSign(privKey);
+    signature.update(Base64.decode(messageb, Base64.DEFAULT));
+    let signatureBytes = signature.sign();
+    return Base64.encodeToString(signatureBytes, Base64.DEFAULT);
   }
   verifyRSA(
     pub_key_pem: string,
@@ -353,7 +391,16 @@ export class NSCrypto implements INSCryto {
     signatureb: string,
     digest_type: string
   ): boolean {
-    throw new Error('Method not implemented.');
+    pub_key_pem = pub_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
+    pub_key_pem = pub_key_pem.replace('-----END PUBLIC KEY-----', '');
+    let publicKeyBytes = Base64.decode(pub_key_pem, Base64.DEFAULT);
+    let keySpec = new X509EncodedKeySpec(publicKeyBytes);
+    let keyFactory = KeyFactory.getInstance('RSA');
+    let pubKey = keyFactory.generatePublic(keySpec);
+    let signature = Signature.getInstance(this.rsaSigDigestType[digest_type]);
+    signature.initVerify(pubKey);
+    signature.update(Base64.decode(messageb, Base64.DEFAULT));
+    return signature.verify(Base64.decode(signatureb, Base64.DEFAULT));
   }
 
   deflate(input: string, alg?: string): string {

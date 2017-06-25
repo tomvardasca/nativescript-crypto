@@ -4,5 +4,7 @@
     <Button text="sha256" tap="sha256" />
     <Button text="random" tap="random" />
     <Button text="deriveSecureKey" tap="deriveSecureKey" />
+    <Button text="encryptRSA" tap="encryptRSA" />
+    <Button text="signRSA" tap="signRSA" />
   </StackLayout>
 </Page>
