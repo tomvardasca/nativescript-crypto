@@ -3,6 +3,9 @@ import * as pages from 'tns-core-modules/ui/page';
 
 import { HelloWorldModel } from './main-view-model';
 import { NSCrypto } from 'nativescript-crypto';
+import * as utils from './utils';
+
+import * as pako from 'pako';
 
 let helloWorldModel: HelloWorldModel;
 // Event handler for Page 'loaded' event attached in main-page.xml
@@ -15,11 +18,88 @@ export function pageLoaded(args: observable.EventData) {
 
 const crypto = new NSCrypto();
 
+export function deflate_inflate() {
+  let start = new Date().getTime();
+  console.log(
+    'crypto..inflate-nativo:',
+    '| native deflate ->',
+    crypto.deflate(crypto.base64encode('abc')),
+    '| pako deflate ->',
+    utils.asciiToBase64(pako.deflate('abc', { to: 'string' })),
+    '| native deflate > pako inflate ->',
+    pako.inflate(
+      utils.base64ToASCII(crypto.deflate(crypto.base64encode('abc'))),
+      { to: 'string' }
+    ),
+    '| native inflate ->',
+    crypto.inflate(utils.asciiToBase64(pako.deflate('abc', { to: 'string' }))),
+    '| pako inflate ->',
+    pako.inflate(
+      utils.base64ToASCII(crypto.deflate(crypto.base64encode('abc'))),
+      { to: 'string' }
+    ),
+    // crypto.base64encode(pako.deflate('abc', { to: 'string' })),
+    // crypto.base64encode(pako.deflate('123456', { to: 'string' })),
+    // crypto.base64encode(pako.deflate('sddddadsadas', { to: 'string' })),
+    // crypto.base64encode(
+    //   pako.deflate('213871298381ds,jhsdbhbcasdbfhjkb874723', { to: 'string' })
+    // ),
+    ' elapsed ',
+    new Date().getTime() - start + 'ms'
+  );
+  console.log(new Date().getTime() - start + 'ms');
+
+  // start = new Date().getTime();
+  // console.log(
+  //   'crypto.inflate-js:',
+  //   // pako.inflate(
+  //   // crypto.base64decode(crypto.deflate(crypto.base64encode('abc'))),
+  //   // //   { to: 'string' }
+  //   // //),
+  //   crypto.base64encode(pako.deflate('abc', { to: 'string' })),
+  //   // crypto.base64encode(pako.deflate('abc', { to: 'string' })),
+  //   // crypto.base64encode(pako.deflate('123456', { to: 'string' })),
+  //   // crypto.base64encode(pako.deflate('sddddadsadas', { to: 'string' })),
+  //   // crypto.base64encode(
+  //   //   pako.deflate('213871298381ds,jhsdbhbcasdbfhjkb874723', { to: 'string' })
+  //   // ),
+  //   ' elapsed '
+  // );
+  // console.log(new Date().getTime() - start + 'ms');
+
+  let benchSTR = '';
+  const possible =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 1000000; i++) {
+    benchSTR += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  const benchSTRb64 = crypto.base64encode(benchSTR);
+
+  start = new Date().getTime();
+  const nativeDef = crypto.deflate(benchSTRb64);
+  let durationNative = new Date().getTime() - start;
+  console.log('crypto.deflate-nativo:', durationNative + 'ms');
+  start = new Date().getTime();
+  const pakoDef = pako.deflate(benchSTR);
+  let durationPako = new Date().getTime() - start;
+  console.log('crypto.deflate-pako:', durationPako + 'ms');
+  console.log('deflate improvement:', durationPako / durationNative + 'x');
+  start = new Date().getTime();
+  crypto.inflate(nativeDef);
+  durationNative = new Date().getTime() - start;
+  console.log('crypto.inflate-nativo:', durationNative + 'ms');
+  start = new Date().getTime();
+  pako.inflate(pakoDef);
+  durationPako = new Date().getTime() - start;
+  console.log('crypto.inflate-pako:', durationPako + 'ms');
+  console.log('inflate improvement:', durationPako / durationNative + 'x');
+}
+
 export function sha256() {
   let start = new Date().getTime();
   console.log(
-    'crypto.hash 256: ',
-    crypto.hash('abc', 'sha256'),
+    'crypto.hash 256:',
+    crypto.hash(crypto.base64encode('abc'), 'sha256'),
     ' elapsed ',
     new Date().getTime() - start + 'ms'
   );
@@ -149,12 +229,12 @@ CF6cPoRAME2qwxMBtItHmQso9vdsIv3TO3xpizm8zY2yXM5zPlorOcX0ldpHxQze
 AnThVsu+gJq8hkjwBGjyKKMD7XjKkcFSZ4WyUN+CefBRfGaWQ3/hdRxXiABv3NV7
 V04h1T7jJtgq/kDt/xL6D+M=
 -----END RSA PRIVATE KEY-----`,
-    crypto.base64encode('eyJhbGciOiJSUzI1NiIsImN0eSI6Impzb24ifQ.ImFiYyI'),
+    crypto.base64encode('abc'),
     'sha256'
   );
   console.log(
     'crypto.signRSA: ',
-    crypto.base64encode('eyJhbGciOiJSUzI1NiIsImN0eSI6Impzb24ifQ.ImFiYyI'),
+    crypto.base64encode('abc'),
     sig,
     ' elapsed ',
     new Date().getTime() - start + 'ms'
@@ -179,6 +259,55 @@ tQIDAQAB
     verify,
     'abc',
     ' elapsed ',
+    new Date().getTime() - start + 'ms'
+  );
+}
+
+export function keyWrapUnWrap() {
+  let start = new Date().getTime();
+  let wrapped = crypto.keyWrapAES(
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+    crypto.base64encode('abcdefgh')
+  );
+  console.log(
+    'crypto.keyWrapAES:',
+    wrapped,
+    crypto.keyUnWrapAES(
+      crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+      wrapped
+    ),
+    ' elapsed',
+    new Date().getTime() - start + 'ms'
+  );
+}
+
+export function encryptAES256GCM() {
+  let start = new Date().getTime();
+  let enc = crypto.encryptAES256GCM(
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+    crypto.base64encode('abcdefgh'),
+    crypto.base64encode('aad'),
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)')
+  );
+  // enc = JSON.parse(
+  //   ' {"cipherb":"EyXQdtYmN3U=","atag":"TMriPJGYM+Lev6kTzSJqkA=="}'
+  //  );
+  console.log(
+    'crypto.encryptAES256GCM: ',
+    ' - ',
+    crypto.base64encode('abcdefgh'),
+    ' - ',
+    crypto.base64encode('abcdefgh'),
+    ' - ',
+    JSON.stringify(enc),
+    crypto.decryptAES256GCM(
+      crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+      enc.cipherb,
+      crypto.base64encode('aad'),
+      crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+      enc.atag
+    ),
+    ' elapsed',
     new Date().getTime() - start + 'ms'
   );
 }

@@ -1,8 +1,8 @@
-platform :ios, '8.3'
+platform :ios, '9.0'
 
 pod 'libsodium', '~> 1.0.12'
-pod 'AesGcm', '~> 0.1'
-pod 'SwiftyRSA/ObjC'
+pod 'SwiftyRSA/ObjC', '~> 1.2.0'
+pod 'CryptoUtils', :path => '../../node_modules/nativescript-crypto/platforms/ios/CryptoUtils'
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|

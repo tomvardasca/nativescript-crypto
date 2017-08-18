@@ -1,9 +1,4 @@
 /* Include.gradle configuration: http://docs.nativescript.org/plugins/plugins#includegradle-specification */
-repositories {
-    mavenCentral()
-    // jcenter()
-}
-
 android {
 	productFlavors {
 		"nativescript-crypto" {
@@ -13,6 +8,8 @@ android {
 }
 
 dependencies {
-    compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.6@aar'
-    compile 'com.facebook.conceal:conceal:1.1.3@aar'
+    // compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.7-SNAPSHOT@aar'
+    compile 'com.madgag.spongycastle:core:1.56.0.0'
+	compile 'com.madgag.spongycastle:prov:1.56.0.0'
+
 }

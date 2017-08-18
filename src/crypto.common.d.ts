@@ -24,8 +24,11 @@ export interface INSCryto {
     decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string;
     signRSA(priv_key_pem: string, messageb: string, digest_type: string): string;
     verifyRSA(pub_key_pem: string, messageb: string, signatureb: string, digest_type: string): boolean;
-    deflate(input: string, alg?: string): string;
-    inflate(input: string, alg?: string): string;
+    deflate(input: string): string;
+    inflate(input: string): string;
     base64encode(input: string): string;
     base64decode(input: string): string;
+    randomUUID(): string;
+    keyWrapAES(wrappingKey: string, key: string): string;
+    keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string;
 }

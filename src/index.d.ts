@@ -25,10 +25,7 @@ export declare class NSCrypto implements INSCryto {
     aad: string,
     pnonce: string,
     alg?: string
-  ): {
-    cipherb: string;
-    alg: string;
-  };
+  ): { cipherb: string; alg: string };
   decryptSecureSymetricAEAD(
     key: string,
     cipherb: string,
@@ -42,10 +39,7 @@ export declare class NSCrypto implements INSCryto {
     aad: string,
     iv: string,
     tagLength?: number
-  ): {
-    cipherb: string;
-    atag: string;
-  };
+  ): { cipherb: string; atag: string };
   decryptAES256GCM(
     key: string,
     cipherb: string,
@@ -62,8 +56,11 @@ export declare class NSCrypto implements INSCryto {
     signatureb: string,
     digest_type: string
   ): boolean;
-  deflate(input: string, alg?: string): string;
-  inflate(input: string, alg?: string): string;
+  deflate(input: string): string;
+  inflate(input: string): string;
   base64encode(input: string): string;
   base64decode(input: string): string;
+  randomUUID(): string;
+  keyWrapAES(wrappingKey: string, key: string): string;
+  keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string;
 }

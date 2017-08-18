@@ -15,18 +15,11 @@ const ByteArrayInputStream = java.io.ByteArrayInputStream;
 const Arrays = java.util.Arrays;
 const System = java.lang.System;
 
-const DEFAULT_ENCRYPT_BUFFER_SIZE = 256;
-const SystemNativeCryptoLibrary =
-  com.facebook.crypto.util.SystemNativeCryptoLibrary;
-const NativeGCMCipher = com.facebook.crypto.cipher.NativeGCMCipher;
-const NativeGCMCipherOutputStream =
-  com.facebook.crypto.streams.NativeGCMCipherOutputStream;
-const NativeGCMCipherInputStream =
-  com.facebook.crypto.streams.NativeGCMCipherInputStream;
-const FixedSizeByteArrayOutputStream =
-  com.facebook.crypto.streams.FixedSizeByteArrayOutputStream;
-
 const X509EncodedKeySpec = java.security.spec.X509EncodedKeySpec;
+const PKCS8EncodedKeySpec = java.security.spec.PKCS8EncodedKeySpec;
+const SecretKeySpec = javax.crypto.spec.SecretKeySpec;
+const cGCMspec: any = javax.crypto.spec;
+const GCMParameterSpec = cGCMspec.GCMParameterSpec;
 const KeyFactory = java.security.KeyFactory;
 const PrivateKey = java.security.PrivateKey;
 const PublicKey = java.security.PublicKey;
@@ -45,6 +38,10 @@ export class NSCrypto implements INSCryto {
         min: 768 * 1024 * 2,
         max: 768 * 2048 * 2
       }
+    },
+    argon2i: {
+      mem_limits: { min: 8192 * 308 * 2, max: 8192 * 436 * 2 },
+      ops_limits: { min: 4, max: 6 }
     }
   };
 
@@ -68,7 +65,7 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this._hashTypeLibsodiumNamespace).indexOf(type) === -1) {
       throw new Error(`hash type "${type}" not found!`);
     }
-    input = new java.lang.String(input).getBytes(StandardCharsets.UTF_8);
+    input = Base64.decode(input, Base64.DEFAULT);
     Sodium.sodium_init();
     let hash_libsodium_namespace = this._hashTypeLibsodiumNamespace[type];
     let hash = Array.create(
@@ -106,7 +103,8 @@ export class NSCrypto implements INSCryto {
     if (salt) {
       _salt = Base64.decode(salt, Base64.DEFAULT);
     }
-    alg = alg || 'scryptsalsa208sha256';
+    alg = alg || 'argon2i';
+
     if (!mem_limits) {
       const diff =
         this.crypto_pwhash_consts[alg].mem_limits.max -
@@ -124,6 +122,7 @@ export class NSCrypto implements INSCryto {
         Sodium.randombytes_uniform(diff + 1); // randombytes_uniform upper_bound is (excluded)
     }
 
+    const derived_key = Array.create('byte', key_size);
     if (alg === 'scryptsalsa208sha256') {
       if (!salt) {
         _salt = Array.create(
@@ -132,7 +131,6 @@ export class NSCrypto implements INSCryto {
         );
         Sodium.randombytes_buf(_salt, _salt.length);
       }
-      let derived_key = Array.create('byte', key_size);
       if (
         Sodium.crypto_pwhash_scryptsalsa208sha256(
           derived_key,
@@ -146,16 +144,35 @@ export class NSCrypto implements INSCryto {
       ) {
         throw new Error('deriveSecureKey out of memory');
       }
-      return {
-        key: Base64.encodeToString(derived_key, Base64.DEFAULT),
-        salt: Base64.encodeToString(_salt, Base64.DEFAULT),
-        ops_limits: ops_limits,
-        mem_limits: mem_limits,
-        alg: alg
-      };
+    } else if (alg === 'argon2i') {
+      if (!salt) {
+        _salt = Array.create('byte', Sodium.crypto_pwhash_saltbytes());
+        Sodium.randombytes_buf(_salt, _salt.length);
+      }
+      if (
+        Sodium.crypto_pwhash(
+          derived_key,
+          key_size,
+          password,
+          password.length,
+          _salt,
+          ops_limits,
+          mem_limits,
+          Sodium.crypto_pwhash_alg_argon2i13()
+        ) !== 0
+      ) {
+        throw new Error('deriveSecureKey out of memory');
+      }
     } else {
       throw new Error(`deriveSecureKey algorithm "${alg}" not found`);
     }
+    return {
+      key: Base64.encodeToString(derived_key, Base64.DEFAULT),
+      salt: Base64.encodeToString(_salt, Base64.DEFAULT),
+      ops_limits: ops_limits,
+      mem_limits: mem_limits,
+      alg: alg
+    };
   }
 
   secureSymetricAEADkeyLength(): number {
@@ -167,7 +184,7 @@ export class NSCrypto implements INSCryto {
 
   encryptSecureSymetricAEAD(
     key: string,
-    plaint: string,
+    plainb: string,
     aad: string,
     pnonce: string,
     alg?: string
@@ -182,24 +199,22 @@ export class NSCrypto implements INSCryto {
     }
 
     const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const plaint_bytes = new java.lang.String(plaint).getBytes(
-      StandardCharsets.UTF_8
-    );
+    const plainb_bytes = Base64.decode(plainb, Base64.DEFAULT);
     const cipherb = Array.create(
       'byte',
-      plaint_bytes.length + Sodium.crypto_aead_chacha20poly1305_ietf_abytes()
+      plainb_bytes.length + Sodium.crypto_aead_chacha20poly1305_ietf_abytes()
     );
     const clen_p = Array.create('int', 1);
-    const ad_bytes = new java.lang.String(aad).getBytes(StandardCharsets.UTF_8);
+    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
     const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
 
     Sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
       cipherb,
       clen_p,
-      plaint_bytes,
-      plaint_bytes.length,
-      ad_bytes,
-      ad_bytes.length,
+      plainb_bytes,
+      plainb_bytes.length,
+      aad_bytes,
+      aad_bytes.length,
       pnonce_bytes,
       null,
       key_bytes
@@ -229,7 +244,9 @@ export class NSCrypto implements INSCryto {
       cipherb_bytes.length - Sodium.crypto_aead_chacha20poly1305_ietf_abytes()
     );
     const mlen_p = Array.create('int', 1);
-    const ad_bytes = new java.lang.String(aad).getBytes(StandardCharsets.UTF_8);
+    const aad_bytes = new java.lang.String(aad).getBytes(
+      StandardCharsets.UTF_8
+    );
     const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
 
     Sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
@@ -237,13 +254,29 @@ export class NSCrypto implements INSCryto {
       mlen_p,
       cipherb_bytes,
       cipherb_bytes.length,
-      ad_bytes,
-      ad_bytes.length,
+      aad_bytes,
+      aad_bytes.length,
       pnonce_bytes,
       null,
       key_bytes
     );
-    return new java.lang.String(plaint_bytes, StandardCharsets.UTF_8);
+    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT);
+  }
+
+  private initSpongyCastle() {
+    if (java.security.Security.getProvider('SC') == null) {
+      java.security.Security.addProvider(
+        new org.spongycastle.jce.provider.BouncyCastleProvider()
+      );
+    }
+  }
+
+  private hasServiceProvider(service: string, provider: string) {
+    const _provider = java.security.Security.getProvider(provider);
+    if (provider != null) {
+      if (_provider.getService('Cipher', service) != null) return true;
+    }
+    return false;
   }
 
   encryptAES256GCM(
@@ -256,44 +289,66 @@ export class NSCrypto implements INSCryto {
     cipherb: string;
     atag: string;
   } {
-    const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
-
     const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const plaint_bytes = new java.lang.String(plaint).getBytes(
-      StandardCharsets.UTF_8
-    );
-    const aad_bytes = new java.lang.String(aad).getBytes(
-      StandardCharsets.UTF_8
-    );
-    const iv_bytes = Base64.decode(key, Base64.DEFAULT);
+    const plaint_bytes = Base64.decode(plaint, Base64.DEFAULT);
+    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
+    const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
 
-    cipher.encryptInit(key_bytes, iv_bytes);
-    cipher.updateAad(aad_bytes, aad_bytes.length);
+    const keyC = new SecretKeySpec(key_bytes, 'AES');
+    this.initSpongyCastle();
+    const cipher: any = Cipher.getInstance('AES/GCM/NoPadding', 'SC');
+    const spec = new GCMParameterSpec(tagLength, iv_bytes);
+    cipher.init(Cipher.ENCRYPT_MODE, keyC, spec);
+    cipher.updateAAD(aad_bytes);
+    let cipherb = cipher.doFinal(plaint_bytes);
 
-    const enc_stream = new FixedSizeByteArrayOutputStream(
-      plaint_bytes.length + tagLength
-    );
-    const cipher_stream = new NativeGCMCipherOutputStream(
-      enc_stream,
-      cipher,
-      null,
-      tagLength
-    );
-    cipher_stream.write(plaint_bytes);
-    cipher_stream.close();
-    let cipherb = enc_stream.getBytes();
     // we will separate the authentication tag from the ciphertext array
     const tagb = Arrays.copyOfRange(
       cipherb,
-      cipherb.length - tagLength - 1,
+      cipherb.length - tagLength / 8,
       cipherb.length
     );
-    cipherb = Arrays.copyOfRange(cipherb, 0, cipherb.length - tagLength);
+    cipherb = Arrays.copyOfRange(cipherb, 0, cipherb.length - tagLength / 8);
 
     return {
       cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT),
       atag: Base64.encodeToString(tagb, Base64.DEFAULT)
     };
+    // const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
+
+    // cipher.encryptInit(key_bytes, iv_bytes);
+    // cipher.updateAad(aad_bytes, aad_bytes.length);
+
+    // const buffer = Array.create('byte', cipher.getCipherBlockSize() + 256);
+    // const content_length = plaint_bytes.length; // + aad_bytes.length + 1024;
+    // const out_stream = new ByteArrayOutputStream(content_length);
+    // const times = Math.floor(content_length / buffer.length);
+    // const remainder = content_length % buffer.length;
+    // let offset = 0;
+
+    // for (let i = 0; i < times; ++i) {
+    //   const written = cipher.update(
+    //     plaint_bytes,
+    //     offset,
+    //     buffer.length,
+    //     buffer,
+    //     0
+    //   );
+    //   out_stream.write(buffer, 0, written);
+    //   offset += buffer.length;
+    // }
+    // if (remainder > 0) {
+    //   const written = cipher.update(plaint_bytes, offset, remainder, buffer, 0);
+    //   out_stream.write(buffer, 0, written);
+    // }
+
+    // const tag = Array.create('byte', tagLength / 8);
+    // cipher.encryptFinal(tag, tag.length);
+
+    // return {
+    //   cipherb: Base64.encodeToString(out_stream.toByteArray(), Base64.DEFAULT),
+    //   atag: Base64.encodeToString(tag, Base64.DEFAULT)
+    // };
   }
   decryptAES256GCM(
     key: string,
@@ -302,21 +357,20 @@ export class NSCrypto implements INSCryto {
     iv: string,
     atag: string
   ): string {
-    const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
-
     const key_bytes = Base64.decode(key, Base64.DEFAULT);
     const cipherb_bytes = Base64.decode(cipherb, Base64.DEFAULT);
-    const iv_bytes = Base64.decode(key, Base64.DEFAULT);
+    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
+    const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
     const atag_bytes = Base64.decode(atag, Base64.DEFAULT);
 
-    const aad_bytes = new java.lang.String(aad).getBytes(
-      StandardCharsets.UTF_8
-    );
+    const plainb_bytes = Array.create('byte', cipherb_bytes.length);
 
-    const cleart_bytes = Array.create('byte', cipherb_bytes.length);
-
-    cipher.decryptInit(key_bytes, iv_bytes);
-    cipher.updateAad(aad_bytes, aad_bytes.length);
+    const keyC = new SecretKeySpec(key_bytes, 'AES');
+    this.initSpongyCastle();
+    const cipher: any = Cipher.getInstance('AES/GCM/NoPadding', 'SC');
+    const spec = new GCMParameterSpec(atag_bytes.length * 8, iv_bytes);
+    cipher.init(Cipher.DECRYPT_MODE, keyC, spec);
+    cipher.updateAAD(aad_bytes);
 
     // we will concat the authentication tag to the ciphertext array
     const cipherb_bytes_complete = Array.create(
@@ -338,14 +392,44 @@ export class NSCrypto implements INSCryto {
       atag_bytes.length
     );
 
-    const dec_stream = new ByteArrayInputStream(cipherb_bytes_complete);
-    const cipher_stream = new NativeGCMCipherInputStream(
-      dec_stream,
-      atag_bytes.length
-    );
-    cipher_stream.read(cleart_bytes);
-    cipher_stream.close();
-    return new java.lang.String(cleart_bytes, StandardCharsets.UTF_8);
+    let plaint_bytes = cipher.doFinal(cipherb_bytes_complete);
+
+    // const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
+
+    // cipher.decryptInit(key_bytes, iv_bytes);
+    // cipher.updateAad(aad_bytes, aad_bytes.length);
+
+    // const buffer = Array.create('byte', cipher.getCipherBlockSize() + 256);
+    // const content_length = cipherb_bytes.length; // +   aad_bytes.length + 1024;
+    // const out_stream = new ByteArrayOutputStream(content_length);
+    // const times = Math.floor(content_length / buffer.length);
+    // const remainder = content_length % buffer.length;
+    // let offset = 0;
+    // for (let i = 0; i < times; ++i) {
+    //   const written = cipher.update(
+    //     cipherb_bytes,
+    //     offset,
+    //     buffer.length,
+    //     buffer,
+    //     0
+    //   );
+    //   out_stream.write(buffer, 0, written);
+    //   offset += buffer.length;
+    // }
+    // if (remainder > 0) {
+    //   const written = cipher.update(
+    //     cipherb_bytes,
+    //     offset,
+    //     remainder,
+    //     buffer,
+    //     0
+    //   );
+    //   out_stream.write(buffer, 0, written);
+    // }
+
+    // cipher.decryptFinal(atag_bytes, atag_bytes.length);
+    // return Base64.encodeToString(out_stream.toByteArray(), Base64.DEFAULT);
+    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT);
   }
 
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
@@ -361,10 +445,13 @@ export class NSCrypto implements INSCryto {
     return Base64.encodeToString(encrypted, Base64.DEFAULT);
   }
   decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string {
-    priv_key_pem = priv_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
-    priv_key_pem = priv_key_pem.replace('-----END PUBLIC KEY-----', '');
+    priv_key_pem = priv_key_pem.replace(
+      '-----BEGIN RSA PRIVATE KEY-----\n',
+      ''
+    );
+    priv_key_pem = priv_key_pem.replace('-----END RSA PRIVATE KEY-----', '');
     let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
-    let keySpec = new X509EncodedKeySpec(privateKeyBytes);
+    let keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
     let keyFactory = KeyFactory.getInstance('RSA');
     let privKey = keyFactory.generatePrivate(keySpec);
     let cipher = Cipher.getInstance(this.rsaEncPaddingType[padding]); // or try with "RSA"
@@ -373,10 +460,13 @@ export class NSCrypto implements INSCryto {
     return Base64.encodeToString(paintb, Base64.DEFAULT);
   }
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
-    priv_key_pem = priv_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
-    priv_key_pem = priv_key_pem.replace('-----END PUBLIC KEY-----', '');
+    priv_key_pem = priv_key_pem.replace(
+      '-----BEGIN RSA PRIVATE KEY-----\n',
+      ''
+    );
+    priv_key_pem = priv_key_pem.replace('-----END RSA PRIVATE KEY-----', '');
     let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
-    let keySpec = new X509EncodedKeySpec(privateKeyBytes);
+    let keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
     let keyFactory = KeyFactory.getInstance('RSA');
     let privKey = keyFactory.generatePrivate(keySpec);
     let signature = Signature.getInstance(this.rsaSigDigestType[digest_type]);
@@ -403,18 +493,18 @@ export class NSCrypto implements INSCryto {
     return signature.verify(Base64.decode(signatureb, Base64.DEFAULT));
   }
 
-  deflate(input: string, alg?: string): string {
-    let data = new java.lang.String(input).getBytes(StandardCharsets.UTF_8);
+  deflate(input: string): string {
+    let data = Base64.decode(input, Base64.DEFAULT);
     let output = Array.create('byte', data.length);
     let compresser = new java.util.zip.Deflater();
-    compresser.setInput(input);
+    compresser.setInput(data, 0, data.length);
     compresser.finish();
     let compressedDataLength = compresser.deflate(output);
     compresser.end();
     output = Arrays.copyOf(output, compressedDataLength);
     return Base64.encodeToString(output, Base64.DEFAULT);
   }
-  inflate(input: string, alg?: string): string {
+  inflate(input: string): string {
     let data = Base64.decode(input, Base64.DEFAULT);
     let decompresser = new java.util.zip.Inflater();
     decompresser.setInput(data, 0, data.length);
@@ -422,7 +512,7 @@ export class NSCrypto implements INSCryto {
     let decompressedDataLength = decompresser.inflate(output);
     decompresser.end();
     output = Arrays.copyOf(output, decompressedDataLength);
-    return new java.lang.String(output, StandardCharsets.UTF_8);
+    return Base64.encodeToString(output, Base64.DEFAULT);
   }
 
   base64encode(input: string): string {
@@ -433,5 +523,45 @@ export class NSCrypto implements INSCryto {
   base64decode(input: string): string {
     let data = Base64.decode(input, Base64.DEFAULT);
     return new java.lang.String(data, StandardCharsets.UTF_8);
+  }
+
+  randomUUID(): string {
+    return java.util.UUID.randomUUID().toString();
+  }
+
+  keyWrapAES(wrappingKey: string, key: string): string {
+    const wrappingKeyData = Base64.decode(wrappingKey, Base64.DEFAULT);
+    const keyData = Base64.decode(key, Base64.DEFAULT);
+    let cipher;
+    if (this.hasServiceProvider('AESWrap', 'BC')) {
+      cipher = Cipher.getInstance('AESWrap', 'BC');
+    } else {
+      this.initSpongyCastle();
+      cipher = Cipher.getInstance('AESWrap', 'SC');
+    }
+    cipher.init(Cipher.WRAP_MODE, new SecretKeySpec(wrappingKeyData, 'AES'));
+    return Base64.encodeToString(
+      cipher.wrap(new SecretKeySpec(keyData, 'AES')),
+      Base64.DEFAULT
+    );
+  }
+  keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
+    const unwrappingKeyData = Base64.decode(unwrappingKey, Base64.DEFAULT);
+    const wrappedkeyData = Base64.decode(wrappedkey, Base64.DEFAULT);
+    let cipher;
+    if (this.hasServiceProvider('AESWrap', 'BC')) {
+      cipher = Cipher.getInstance('AESWrap', 'BC');
+    } else {
+      this.initSpongyCastle();
+      cipher = Cipher.getInstance('AESWrap', 'SC');
+    }
+    cipher.init(
+      Cipher.UNWRAP_MODE,
+      new SecretKeySpec(unwrappingKeyData, 'AES')
+    );
+    return Base64.encodeToString(
+      cipher.unwrap(wrappedkeyData, 'AES', Cipher.SECRET_KEY).getEncoded(),
+      Base64.DEFAULT
+    );
   }
 }

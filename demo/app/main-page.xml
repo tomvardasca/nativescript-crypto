@@ -4,7 +4,10 @@
     <Button text="sha256" tap="sha256" />
     <Button text="random" tap="random" />
     <Button text="deriveSecureKey" tap="deriveSecureKey" />
-    <Button text="encryptRSA" tap="encryptRSA" />
-    <Button text="signRSA" tap="signRSA" />
+    <Button text="encryptRSA/decryptRSA" tap="encryptRSA" />
+    <Button text="signRSA/verifyRSA" tap="signRSA" />
+    <Button text="deflate/inflate" tap="deflate_inflate" />
+    <Button text="keyWrap/KeyUnWrap" tap="keyWrapUnWrap"/>
+		<Button text="encryptAES256GCM/decryptAES256GCM" tap="encryptAES256GCM"/>
   </StackLayout>
 </Page>

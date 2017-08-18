@@ -7,7 +7,7 @@ ROOT_DIR=..;
 PUBLISH=--publish
 
 install(){
-    npm i
+    node_modules/.bin/npm i
 }
 
 pack() {
@@ -37,7 +37,7 @@ pack() {
 
     # create the package
     cd "$PACK_DIR"
-    npm pack ../"$TO_SOURCE_DIR"
+    ../node_modules/.bin/npm pack ../"$TO_SOURCE_DIR"
 
     # delete source directory used to create the package
     cd ..

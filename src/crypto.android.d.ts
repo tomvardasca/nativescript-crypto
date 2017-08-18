@@ -15,11 +15,13 @@ export declare class NSCrypto implements INSCryto {
     };
     secureSymetricAEADkeyLength(): number;
     secureSymetricAEADnonceLength(): number;
-    encryptSecureSymetricAEAD(key: string, plaint: string, aad: string, pnonce: string, alg?: string): {
+    encryptSecureSymetricAEAD(key: string, plainb: string, aad: string, pnonce: string, alg?: string): {
         cipherb: string;
         alg: string;
     };
     decryptSecureSymetricAEAD(key: string, cipherb: string, aad: string, pnonce: string, alg?: string): string;
+    private initSpongyCastle();
+    private hasServiceProvider(service, provider);
     encryptAES256GCM(key: string, plaint: string, aad: string, iv: string, tagLength?: number): {
         cipherb: string;
         atag: string;
@@ -29,8 +31,11 @@ export declare class NSCrypto implements INSCryto {
     decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string;
     signRSA(priv_key_pem: string, messageb: string, digest_type: string): string;
     verifyRSA(pub_key_pem: string, messageb: string, signatureb: string, digest_type: string): boolean;
-    deflate(input: string, alg?: string): string;
-    inflate(input: string, alg?: string): string;
+    deflate(input: string): string;
+    inflate(input: string): string;
     base64encode(input: string): string;
     base64decode(input: string): string;
+    randomUUID(): string;
+    keyWrapAES(wrappingKey: string, key: string): string;
+    keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string;
 }

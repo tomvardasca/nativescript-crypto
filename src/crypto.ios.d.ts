@@ -1,9 +1,8 @@
 import { INSCryto } from './crypto.common';
 export declare class NSCrypto implements INSCryto {
     private crypto_pwhash_consts;
-    private hashTypeLibsodiumFn;
     private rsaEncPaddingType;
-    private rsaSigDigestType;
+    private digestType;
     hash(input: string, type: string): string;
     secureRandomBytes(length: number): string;
     deriveSecureKey(password: string, key_size: number, salt?: string, ops_limits?: number, mem_limits?: number, alg?: string): {
@@ -15,12 +14,12 @@ export declare class NSCrypto implements INSCryto {
     };
     secureSymetricAEADkeyLength(): number;
     secureSymetricAEADnonceLength(): number;
-    encryptSecureSymetricAEAD(key: string, plaint: string, aad: string, pnonce: string, alg?: string): {
+    encryptSecureSymetricAEAD(key: string, plainb: string, aad: string, pnonce: string, alg?: string): {
         cipherb: string;
         alg: string;
     };
     decryptSecureSymetricAEAD(key: string, cipherb: string, aad: string, pnonce: string, alg?: string): string;
-    encryptAES256GCM(key: string, plaint: string, aad: string, iv: string, tagLength?: number): {
+    encryptAES256GCM(key: string, plainb: string, aad: string, iv: string, tagLength?: number): {
         cipherb: string;
         atag: string;
     };
@@ -33,4 +32,7 @@ export declare class NSCrypto implements INSCryto {
     inflate(input: string, alg?: string): string;
     base64encode(input: string): string;
     base64decode(input: string): string;
+    randomUUID(): string;
+    keyWrapAES(wrappingKey: string, key: string): string;
+    keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string;
 }

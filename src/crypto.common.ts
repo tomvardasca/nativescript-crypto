@@ -61,8 +61,11 @@ export interface INSCryto {
     signatureb: string,
     digest_type: string
   ): boolean;
-  deflate(input: string, alg?: string): string;
-  inflate(input: string, alg?: string): string;
+  deflate(input: string): string;
+  inflate(input: string): string;
   base64encode(input: string): string;
   base64decode(input: string): string;
+  randomUUID(): string;
+  keyWrapAES(wrappingKey: string, key: string): string;
+  keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string;
 }
