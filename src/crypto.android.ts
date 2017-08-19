@@ -27,6 +27,13 @@ const Security = java.security.Security;
 const Signature = java.security.Signature;
 const Cipher = javax.crypto.Cipher;
 
+const BlockCipher = org.spongycastle.crypto.BlockCipher;
+const KeyParameter = org.spongycastle.crypto.params.KeyParameter;
+const AESEngine = org.spongycastle.crypto.engines.AESLightEngine;
+const KeyWrapEngine = org.spongycastle.crypto.engines.RFC3394WrapEngine; //KeyWrap
+const AEADParameters = org.spongycastle.crypto.params.AEADParameters;
+const GCMBlockCipher = org.spongycastle.crypto.modes.GCMBlockCipher;
+
 export class NSCrypto implements INSCryto {
   private crypto_pwhash_consts = {
     scryptsalsa208sha256: {
@@ -40,8 +47,8 @@ export class NSCrypto implements INSCryto {
       }
     },
     argon2i: {
-      mem_limits: { min: 8192 * 308 * 2, max: 8192 * 436 * 2 },
-      ops_limits: { min: 4, max: 6 }
+      mem_limits: { min: 8192 * 308 * 3, max: 8192 * 436 * 4 },
+      ops_limits: { min: 5, max: 7 }
     }
   };
 
@@ -294,13 +301,31 @@ export class NSCrypto implements INSCryto {
     const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
     const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
 
-    const keyC = new SecretKeySpec(key_bytes, 'AES');
-    this.initSpongyCastle();
-    const cipher: any = Cipher.getInstance('AES/GCM/NoPadding', 'SC');
-    const spec = new GCMParameterSpec(tagLength, iv_bytes);
-    cipher.init(Cipher.ENCRYPT_MODE, keyC, spec);
-    cipher.updateAAD(aad_bytes);
-    let cipherb = cipher.doFinal(plaint_bytes);
+    const cipher = new GCMBlockCipher(new AESEngine());
+    cipher.init(
+      true,
+      new AEADParameters(
+        new KeyParameter(key_bytes),
+        tagLength,
+        iv_bytes,
+        aad_bytes
+      )
+    );
+
+    let cipherb = Array.create(
+      'byte',
+      cipher.getOutputSize(plaint_bytes.length)
+    );
+
+    const outputLen = cipher.processBytes(
+      plaint_bytes,
+      0,
+      plaint_bytes.length,
+      cipherb,
+      0
+    );
+
+    cipher.doFinal(cipherb, outputLen);
 
     // we will separate the authentication tag from the ciphertext array
     const tagb = Arrays.copyOfRange(
@@ -314,41 +339,6 @@ export class NSCrypto implements INSCryto {
       cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT),
       atag: Base64.encodeToString(tagb, Base64.DEFAULT)
     };
-    // const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
-
-    // cipher.encryptInit(key_bytes, iv_bytes);
-    // cipher.updateAad(aad_bytes, aad_bytes.length);
-
-    // const buffer = Array.create('byte', cipher.getCipherBlockSize() + 256);
-    // const content_length = plaint_bytes.length; // + aad_bytes.length + 1024;
-    // const out_stream = new ByteArrayOutputStream(content_length);
-    // const times = Math.floor(content_length / buffer.length);
-    // const remainder = content_length % buffer.length;
-    // let offset = 0;
-
-    // for (let i = 0; i < times; ++i) {
-    //   const written = cipher.update(
-    //     plaint_bytes,
-    //     offset,
-    //     buffer.length,
-    //     buffer,
-    //     0
-    //   );
-    //   out_stream.write(buffer, 0, written);
-    //   offset += buffer.length;
-    // }
-    // if (remainder > 0) {
-    //   const written = cipher.update(plaint_bytes, offset, remainder, buffer, 0);
-    //   out_stream.write(buffer, 0, written);
-    // }
-
-    // const tag = Array.create('byte', tagLength / 8);
-    // cipher.encryptFinal(tag, tag.length);
-
-    // return {
-    //   cipherb: Base64.encodeToString(out_stream.toByteArray(), Base64.DEFAULT),
-    //   atag: Base64.encodeToString(tag, Base64.DEFAULT)
-    // };
   }
   decryptAES256GCM(
     key: string,
@@ -362,15 +352,6 @@ export class NSCrypto implements INSCryto {
     const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
     const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
     const atag_bytes = Base64.decode(atag, Base64.DEFAULT);
-
-    const plainb_bytes = Array.create('byte', cipherb_bytes.length);
-
-    const keyC = new SecretKeySpec(key_bytes, 'AES');
-    this.initSpongyCastle();
-    const cipher: any = Cipher.getInstance('AES/GCM/NoPadding', 'SC');
-    const spec = new GCMParameterSpec(atag_bytes.length * 8, iv_bytes);
-    cipher.init(Cipher.DECRYPT_MODE, keyC, spec);
-    cipher.updateAAD(aad_bytes);
 
     // we will concat the authentication tag to the ciphertext array
     const cipherb_bytes_complete = Array.create(
@@ -392,44 +373,33 @@ export class NSCrypto implements INSCryto {
       atag_bytes.length
     );
 
-    let plaint_bytes = cipher.doFinal(cipherb_bytes_complete);
+    const cipher = new GCMBlockCipher(new AESEngine());
+    cipher.init(
+      false,
+      new AEADParameters(
+        new KeyParameter(key_bytes),
+        atag_bytes.length * 8,
+        iv_bytes,
+        aad_bytes
+      )
+    );
 
-    // const cipher = new NativeGCMCipher(new SystemNativeCryptoLibrary());
+    let plainb_bytes = Array.create(
+      'byte',
+      cipher.getOutputSize(cipherb_bytes_complete.length)
+    );
 
-    // cipher.decryptInit(key_bytes, iv_bytes);
-    // cipher.updateAad(aad_bytes, aad_bytes.length);
+    const outputLen = cipher.processBytes(
+      cipherb_bytes_complete,
+      0,
+      cipherb_bytes_complete.length,
+      plainb_bytes,
+      0
+    );
 
-    // const buffer = Array.create('byte', cipher.getCipherBlockSize() + 256);
-    // const content_length = cipherb_bytes.length; // +   aad_bytes.length + 1024;
-    // const out_stream = new ByteArrayOutputStream(content_length);
-    // const times = Math.floor(content_length / buffer.length);
-    // const remainder = content_length % buffer.length;
-    // let offset = 0;
-    // for (let i = 0; i < times; ++i) {
-    //   const written = cipher.update(
-    //     cipherb_bytes,
-    //     offset,
-    //     buffer.length,
-    //     buffer,
-    //     0
-    //   );
-    //   out_stream.write(buffer, 0, written);
-    //   offset += buffer.length;
-    // }
-    // if (remainder > 0) {
-    //   const written = cipher.update(
-    //     cipherb_bytes,
-    //     offset,
-    //     remainder,
-    //     buffer,
-    //     0
-    //   );
-    //   out_stream.write(buffer, 0, written);
-    // }
+    cipher.doFinal(plainb_bytes, outputLen);
 
-    // cipher.decryptFinal(atag_bytes, atag_bytes.length);
-    // return Base64.encodeToString(out_stream.toByteArray(), Base64.DEFAULT);
-    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT);
+    return Base64.encodeToString(plainb_bytes, Base64.DEFAULT);
   }
 
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
@@ -530,38 +500,20 @@ export class NSCrypto implements INSCryto {
   }
 
   keyWrapAES(wrappingKey: string, key: string): string {
-    const wrappingKeyData = Base64.decode(wrappingKey, Base64.DEFAULT);
-    const keyData = Base64.decode(key, Base64.DEFAULT);
-    let cipher;
-    if (this.hasServiceProvider('AESWrap', 'BC')) {
-      cipher = Cipher.getInstance('AESWrap', 'BC');
-    } else {
-      this.initSpongyCastle();
-      cipher = Cipher.getInstance('AESWrap', 'SC');
-    }
-    cipher.init(Cipher.WRAP_MODE, new SecretKeySpec(wrappingKeyData, 'AES'));
-    return Base64.encodeToString(
-      cipher.wrap(new SecretKeySpec(keyData, 'AES')),
-      Base64.DEFAULT
-    );
+    const wrappingKey_bytes = Base64.decode(wrappingKey, Base64.DEFAULT);
+    const key_bytes = Base64.decode(key, Base64.DEFAULT);
+    const cipher = new KeyWrapEngine(new AESEngine());
+    cipher.init(true, new KeyParameter(wrappingKey_bytes));
+    const wrappedkey_bytes = cipher.wrap(key_bytes, 0, key_bytes.length);
+    return Base64.encodeToString(wrappedkey_bytes, Base64.DEFAULT);
   }
   keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
-    const unwrappingKeyData = Base64.decode(unwrappingKey, Base64.DEFAULT);
-    const wrappedkeyData = Base64.decode(wrappedkey, Base64.DEFAULT);
-    let cipher;
-    if (this.hasServiceProvider('AESWrap', 'BC')) {
-      cipher = Cipher.getInstance('AESWrap', 'BC');
-    } else {
-      this.initSpongyCastle();
-      cipher = Cipher.getInstance('AESWrap', 'SC');
-    }
-    cipher.init(
-      Cipher.UNWRAP_MODE,
-      new SecretKeySpec(unwrappingKeyData, 'AES')
-    );
-    return Base64.encodeToString(
-      cipher.unwrap(wrappedkeyData, 'AES', Cipher.SECRET_KEY).getEncoded(),
-      Base64.DEFAULT
-    );
+    const unwrappingKey_bytes = Base64.decode(unwrappingKey, Base64.DEFAULT);
+    const wrappedkey_bytes = Base64.decode(wrappedkey, Base64.DEFAULT);
+
+    const cipher = new KeyWrapEngine(new AESEngine());
+    cipher.init(false, new KeyParameter(unwrappingKey_bytes));
+    const key = cipher.unwrap(wrappedkey_bytes, 0, wrappedkey_bytes.length);
+    return Base64.encodeToString(key, Base64.DEFAULT);
   }
 }

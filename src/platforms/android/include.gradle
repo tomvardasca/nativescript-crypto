@@ -10,6 +10,4 @@ android {
 dependencies {
     // compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.7-SNAPSHOT@aar'
     compile 'com.madgag.spongycastle:core:1.56.0.0'
-	compile 'com.madgag.spongycastle:prov:1.56.0.0'
-
 }

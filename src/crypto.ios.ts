@@ -461,15 +461,6 @@ export class NSCrypto implements INSCryto {
       0,
       null
     ).base64EncodedStringWithOptions(kNilOptions);
-    //  let privKey = new PrivateKey({ pemEncoded: priv_key_pem });
-    // let clearMessage = new ClearMessage({
-    //   base64Encoded: messageb
-    // });
-    // let signature = clearMessage.signedWithDigestTypeError(
-    //   privKey,
-    //   this.rsaSigDigestType[digest_type]
-    // );
-    // return signature.base64String;
   }
 
   verifyRSA(
@@ -505,17 +496,6 @@ export class NSCrypto implements INSCryto {
     } catch (err) {
       return false;
     }
-    // let pubKey = new PublicKey({ pemEncoded: pub_key_pem });
-    // let clearMessage = new ClearMessage({
-    //   base64Encoded: messageb
-    // });
-    // let signature = new Signature({ base64Encoded: signatureb });
-    // let verificationResult = clearMessage.verifyWithSignatureDigestTypeError(
-    //   pubKey,
-    //   signature,
-    //   this.rsaSigDigestType[digest_type]
-    // );
-    // return verificationResult.isSuccessful;
   }
 
   deflate(input: string, alg?: string): string {
