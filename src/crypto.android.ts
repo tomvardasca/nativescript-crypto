@@ -18,8 +18,6 @@ const System = java.lang.System;
 const X509EncodedKeySpec = java.security.spec.X509EncodedKeySpec;
 const PKCS8EncodedKeySpec = java.security.spec.PKCS8EncodedKeySpec;
 const SecretKeySpec = javax.crypto.spec.SecretKeySpec;
-const cGCMspec: any = javax.crypto.spec;
-const GCMParameterSpec = cGCMspec.GCMParameterSpec;
 const KeyFactory = java.security.KeyFactory;
 const PrivateKey = java.security.PrivateKey;
 const PublicKey = java.security.PublicKey;
@@ -29,7 +27,7 @@ const Cipher = javax.crypto.Cipher;
 
 const BlockCipher = org.spongycastle.crypto.BlockCipher;
 const KeyParameter = org.spongycastle.crypto.params.KeyParameter;
-const AESEngine = org.spongycastle.crypto.engines.AESLightEngine;
+const AESEngine = org.spongycastle.crypto.engines.AESFasterEngine;
 const KeyWrapEngine = org.spongycastle.crypto.engines.RFC3394WrapEngine; //KeyWrap
 const AEADParameters = org.spongycastle.crypto.params.AEADParameters;
 const GCMBlockCipher = org.spongycastle.crypto.modes.GCMBlockCipher;
@@ -47,8 +45,8 @@ export class NSCrypto implements INSCryto {
       }
     },
     argon2i: {
-      mem_limits: { min: 8192 * 308 * 3, max: 8192 * 436 * 4 },
-      ops_limits: { min: 5, max: 7 }
+      mem_limits: { min: 8192 * 308, max: 8192 * 436 },
+      ops_limits: { min: 4, max: 6 }
     }
   };
 

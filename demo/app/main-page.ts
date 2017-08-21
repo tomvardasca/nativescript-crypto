@@ -267,7 +267,7 @@ export function keyWrapUnWrap() {
   let start = new Date().getTime();
   let wrapped = crypto.keyWrapAES(
     crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
-    crypto.base64encode('abcdefgh')
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)')
   );
   console.log(
     'crypto.keyWrapAES:',
@@ -282,31 +282,33 @@ export function keyWrapUnWrap() {
 }
 
 export function encryptAES256GCM() {
+  let benchSTR = '';
+  const possible =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 1000000; i++) {
+    benchSTR += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  let encodedString = crypto.base64encode(benchSTR);
+
   let start = new Date().getTime();
   let enc = crypto.encryptAES256GCM(
     crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
-    crypto.base64encode('abcdefgh'),
+    encodedString,
     crypto.base64encode('aad'),
     crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)')
   );
   // enc = JSON.parse(
   //   ' {"cipherb":"EyXQdtYmN3U=","atag":"TMriPJGYM+Lev6kTzSJqkA=="}'
   //  );
+  crypto.decryptAES256GCM(
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+    enc.cipherb,
+    crypto.base64encode('aad'),
+    crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
+    enc.atag
+  );
   console.log(
     'crypto.encryptAES256GCM: ',
-    ' - ',
-    crypto.base64encode('abcdefgh'),
-    ' - ',
-    crypto.base64encode('abcdefgh'),
-    ' - ',
-    JSON.stringify(enc),
-    crypto.decryptAES256GCM(
-      crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
-      enc.cipherb,
-      crypto.base64encode('aad'),
-      crypto.base64encode('5v8y/B?E(H+MbQeThWmZq3t6w9z$C&F)'),
-      enc.atag
-    ),
     ' elapsed',
     new Date().getTime() - start + 'ms'
   );
