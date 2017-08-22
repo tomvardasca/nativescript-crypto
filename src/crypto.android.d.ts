@@ -2,7 +2,7 @@ import { INSCryto } from './crypto.common';
 export declare class NSCrypto implements INSCryto {
     private crypto_pwhash_consts;
     private _hashTypeLibsodiumNamespace;
-    private rsaEncPaddingType;
+    private rsaEncPaddingEncodingType;
     private rsaSigDigestType;
     hash(input: string, type: string): string;
     secureRandomBytes(length: number): string;
@@ -20,8 +20,6 @@ export declare class NSCrypto implements INSCryto {
         alg: string;
     };
     decryptSecureSymetricAEAD(key: string, cipherb: string, aad: string, pnonce: string, alg?: string): string;
-    private initSpongyCastle();
-    private hasServiceProvider(service, provider);
     encryptAES256GCM(key: string, plaint: string, aad: string, iv: string, tagLength?: number): {
         cipherb: string;
         atag: string;

@@ -59,9 +59,9 @@ const toBase64 = (input: interop.Pointer, length: number): string => {
 const base64toBytes = (
   input: string
 ): { bytes: interop.AdoptedPointer; length: number } => {
-  let input_data = new NSData({ base64Encoding: input });
-  let _input_length = input_data.length;
-  let _input = interop.alloc(
+  const input_data = new NSData({ base64Encoding: input });
+  const _input_length = input_data.length;
+  const _input = interop.alloc(
     _input_length * interop.sizeof(interop.types.unichar)
   );
   input_data.getBytes(_input);
@@ -99,16 +99,16 @@ export class NSCrypto implements INSCryto {
       base64EncodedString: input,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    return SwCC.digestAlg(
-      inputData,
-      this.digestType[type]
-    ).base64EncodedStringWithOptions(kNilOptions);
+    return SwCC.digestAlg(inputData, this.digestType[type])
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
 
   secureRandomBytes(length: number): string {
-    return SwCC.generateRandom(length).base64EncodedStringWithOptions(
-      kNilOptions
-    );
+    return SwCC.generateRandom(length)
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim()
+      .trim();
   }
 
   deriveSecureKey(
@@ -142,7 +142,7 @@ export class NSCrypto implements INSCryto {
     }
 
     if (!mem_limits) {
-      let diff =
+      const diff =
         this.crypto_pwhash_consts[alg].mem_limits.max -
         this.crypto_pwhash_consts[alg].mem_limits.min;
       mem_limits =
@@ -150,7 +150,7 @@ export class NSCrypto implements INSCryto {
         randombytes_uniform(diff + 1); // randombytes_uniform upper_bound is (excluded)
     }
     if (!ops_limits) {
-      let diff =
+      const diff =
         this.crypto_pwhash_consts[alg].ops_limits.max -
         this.crypto_pwhash_consts[alg].ops_limits.min;
       ops_limits =
@@ -169,7 +169,7 @@ export class NSCrypto implements INSCryto {
       );
       randombytes_buf(_salt, _salt_length);
     }
-    let derived_key = interop.alloc(
+    const derived_key = interop.alloc(
       key_size * interop.sizeof(interop.types.unichar)
     );
 
@@ -231,9 +231,9 @@ export class NSCrypto implements INSCryto {
     alg?: string
   ): { cipherb: string; alg: string } {
     let cipherb;
-    let cipherb_length = new interop.Reference<number>();
-    let dataPlainb = base64toBytes(plainb);
-    let dataAAD = base64toBytes(aad);
+    const cipherb_length = new interop.Reference<number>();
+    const dataPlainb = base64toBytes(plainb);
+    const dataAAD = base64toBytes(aad);
 
     if (
       crypto_aead_aes256gcm_is_available() !== 0 &&
@@ -292,7 +292,7 @@ export class NSCrypto implements INSCryto {
     alg?: string
   ): string {
     let plainb: interop.Pointer;
-    let plainb_length = new interop.Reference<number>();
+    const plainb_length = new interop.Reference<number>();
 
     if (
       crypto_aead_aes256gcm_is_available() !== 0 &&
@@ -344,12 +344,12 @@ export class NSCrypto implements INSCryto {
     iv: string,
     tagLength: number = 128
   ): { cipherb: string; atag: string } {
-    let plaintData = new NSData({ base64Encoding: plainb });
-    let aadData = new NSData({ base64Encoding: aad });
-    let ivData = new NSData({ base64Encoding: iv });
-    let keyData = new NSData({ base64Encoding: key });
+    const plaintData = new NSData({ base64Encoding: plainb });
+    const aadData = new NSData({ base64Encoding: aad });
+    const ivData = new NSData({ base64Encoding: iv });
+    const keyData = new NSData({ base64Encoding: key });
 
-    let res = SwCC.cryptAuthBlockModeAlgorithmDataADataKeyIvTagLengthTagError(
+    const res = SwCC.cryptAuthBlockModeAlgorithmDataADataKeyIvTagLengthTagError(
       SwCC_OpMode.Encrypt,
       SwCC_AuthBlockMode.Gcm,
       SwCC_Algorithm.Aes,
@@ -364,8 +364,12 @@ export class NSCrypto implements INSCryto {
     return {
       cipherb: res
         .valueForKey('data')
-        .base64EncodedStringWithOptions(kNilOptions),
-      atag: res.valueForKey('tag').base64EncodedStringWithOptions(kNilOptions)
+        .base64EncodedStringWithOptions(kNilOptions)
+        .trim(),
+      atag: res
+        .valueForKey('tag')
+        .base64EncodedStringWithOptions(kNilOptions)
+        .trim()
     };
   }
   decryptAES256GCM(
@@ -375,28 +379,28 @@ export class NSCrypto implements INSCryto {
     iv: string,
     atag: string
   ): string {
-    let cipherbData: NSData = new NSData({
+    const cipherbData: NSData = new NSData({
       base64EncodedString: cipherb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let atagData: NSData = new NSData({
+    const atagData: NSData = new NSData({
       base64EncodedString: atag,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let aadData: NSData = new NSData({
+    const aadData: NSData = new NSData({
       base64EncodedString: aad,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let ivData = new NSData({
+    const ivData = new NSData({
       base64EncodedString: iv,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let keyData = new NSData({
+    const keyData = new NSData({
       base64EncodedString: key,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
 
-    let res = SwCC.cryptAuthBlockModeAlgorithmDataADataKeyIvTagLengthTagError(
+    const res = SwCC.cryptAuthBlockModeAlgorithmDataADataKeyIvTagLengthTagError(
       SwCC_OpMode.Decrypt,
       SwCC_AuthBlockMode.Gcm,
       SwCC_Algorithm.Aes,
@@ -407,7 +411,10 @@ export class NSCrypto implements INSCryto {
       atagData.length,
       atagData
     );
-    return res.valueForKey('data').base64EncodedStringWithOptions(kNilOptions);
+    return res
+      .valueForKey('data')
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
     if (Object.keys(this.rsaEncPaddingType).indexOf(padding) === -1) {
@@ -424,7 +431,9 @@ export class NSCrypto implements INSCryto {
       null,
       this.rsaEncPaddingType[padding],
       SwCC_DigestAlgorithm.Sha1
-    ).base64EncodedStringWithOptions(kNilOptions);
+    )
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
   decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string {
     if (Object.keys(this.rsaEncPaddingType).indexOf(padding) === -1) {
@@ -441,7 +450,9 @@ export class NSCrypto implements INSCryto {
       null,
       this.rsaEncPaddingType[padding],
       SwCC_DigestAlgorithm.Sha1
-    ).base64EncodedStringWithOptions(kNilOptions);
+    )
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
 
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
@@ -460,7 +471,9 @@ export class NSCrypto implements INSCryto {
       SwCC_DigestAlgorithm.Sha256,
       0,
       null
-    ).base64EncodedStringWithOptions(kNilOptions);
+    )
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
 
   verifyRSA(
@@ -504,7 +517,7 @@ export class NSCrypto implements INSCryto {
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
     let dc = new DataCompression({ data });
-    return dc.zip().base64EncodedStringWithOptions(kNilOptions);
+    return dc.zip().base64EncodedStringWithOptions(kNilOptions).trim();
   }
   inflate(input: string, alg?: string): string {
     let data = new NSData({
@@ -514,14 +527,15 @@ export class NSCrypto implements INSCryto {
     let dc = new DataCompression({ data });
     return dc
       .unzipWithSkipHeaderAndCheckSumValidation(true)
-      .base64EncodedStringWithOptions(kNilOptions);
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
 
   base64encode(input: string): string {
     let plainData: NSData = new NSString({
       UTF8String: input
     }).dataUsingEncoding(NSUTF8StringEncoding);
-    return plainData.base64EncodedStringWithOptions(kNilOptions);
+    return plainData.base64EncodedStringWithOptions(kNilOptions).trim();
   }
 
   base64decode(input: string): string {
@@ -553,7 +567,9 @@ export class NSCrypto implements INSCryto {
       wrappingKeyData,
       keyData,
       null
-    ).base64EncodedStringWithOptions(kNilOptions);
+    )
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
   keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
     let unwrappingKeyData = new NSData({
@@ -569,6 +585,8 @@ export class NSCrypto implements INSCryto {
       unwrappingKeyData,
       wrappedData,
       null
-    ).base64EncodedStringWithOptions(kNilOptions);
+    )
+      .base64EncodedStringWithOptions(kNilOptions)
+      .trim();
   }
 }

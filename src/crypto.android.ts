@@ -27,10 +27,22 @@ const Cipher = javax.crypto.Cipher;
 
 const BlockCipher = org.spongycastle.crypto.BlockCipher;
 const KeyParameter = org.spongycastle.crypto.params.KeyParameter;
-const AESEngine = org.spongycastle.crypto.engines.AESFasterEngine;
+const AESEngine = org.spongycastle.crypto.engines.AESFastEngine;
 const KeyWrapEngine = org.spongycastle.crypto.engines.RFC3394WrapEngine; //KeyWrap
+const RSAEngine = org.spongycastle.crypto.engines.RSAEngine;
 const AEADParameters = org.spongycastle.crypto.params.AEADParameters;
 const GCMBlockCipher = org.spongycastle.crypto.modes.GCMBlockCipher;
+const RSAKeyParameters = org.spongycastle.crypto.params.RSAKeyParameters;
+const RSAPrivateCrtKeyParameters =
+  org.spongycastle.crypto.params.RSAPrivateCrtKeyParameters;
+const OAEPEncoding = org.spongycastle.crypto.encodings.OAEPEncoding;
+const PKCS1Encoding = org.spongycastle.crypto.encodings.PKCS1Encoding;
+const PublicKeyFactory = org.spongycastle.crypto.util.PublicKeyFactory;
+const PrivateKeyFactory = org.spongycastle.crypto.util.PrivateKeyFactory;
+const SHA1Digest = org.spongycastle.crypto.digests.SHA1Digest;
+const SHA256Digest = org.spongycastle.crypto.digests.SHA256Digest;
+const SHA512Digest = org.spongycastle.crypto.digests.SHA512Digest;
+const RSADigestSigner = org.spongycastle.crypto.signers.RSADigestSigner;
 
 export class NSCrypto implements INSCryto {
   private crypto_pwhash_consts = {
@@ -55,15 +67,15 @@ export class NSCrypto implements INSCryto {
     sha512: 'crypto_hash_sha512'
   };
 
-  private rsaEncPaddingType = {
-    pkcs1: 'RSA/NONE/PKCS1Padding',
-    oaep: 'RSA/NONE/OAEPwithSHA-1andMGF1Padding'
+  private rsaEncPaddingEncodingType = {
+    pkcs1: PKCS1Encoding,
+    oaep: OAEPEncoding
   };
 
   private rsaSigDigestType = {
-    sha1: 'SHA1withRSA',
-    sha256: 'SHA256withRSA',
-    sha512: 'SHA512withRSA'
+    sha1: SHA1Digest,
+    sha256: SHA256Digest,
+    sha512: SHA512Digest
   };
 
   hash(input: string, type: string): string {
@@ -78,14 +90,14 @@ export class NSCrypto implements INSCryto {
       Sodium[hash_libsodium_namespace + '_bytes']()
     );
     Sodium[hash_libsodium_namespace](hash, input, input.length);
-    return Base64.encodeToString(hash, Base64.DEFAULT);
+    return Base64.encodeToString(hash, Base64.DEFAULT).trim();
   }
 
   secureRandomBytes(length: number): string {
     Sodium.sodium_init();
     let bytes = Array.create('byte', length);
     Sodium.randombytes_buf(bytes, length);
-    return Base64.encodeToString(bytes, Base64.DEFAULT);
+    return Base64.encodeToString(bytes, Base64.DEFAULT).trim();
   }
 
   deriveSecureKey(
@@ -265,23 +277,7 @@ export class NSCrypto implements INSCryto {
       null,
       key_bytes
     );
-    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT);
-  }
-
-  private initSpongyCastle() {
-    if (java.security.Security.getProvider('SC') == null) {
-      java.security.Security.addProvider(
-        new org.spongycastle.jce.provider.BouncyCastleProvider()
-      );
-    }
-  }
-
-  private hasServiceProvider(service: string, provider: string) {
-    const _provider = java.security.Security.getProvider(provider);
-    if (provider != null) {
-      if (_provider.getService('Cipher', service) != null) return true;
-    }
-    return false;
+    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT).trim();
   }
 
   encryptAES256GCM(
@@ -397,51 +393,93 @@ export class NSCrypto implements INSCryto {
 
     cipher.doFinal(plainb_bytes, outputLen);
 
-    return Base64.encodeToString(plainb_bytes, Base64.DEFAULT);
+    return Base64.encodeToString(plainb_bytes, Base64.DEFAULT).trim();
   }
 
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
-    pub_key_pem = pub_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
-    pub_key_pem = pub_key_pem.replace('-----END PUBLIC KEY-----', '');
-    let publicKeyBytes = Base64.decode(pub_key_pem, Base64.DEFAULT);
-    let keySpec = new X509EncodedKeySpec(publicKeyBytes);
-    let keyFactory = KeyFactory.getInstance('RSA');
-    let pubKey = keyFactory.generatePublic(keySpec);
-    let cipher = Cipher.getInstance(this.rsaEncPaddingType[padding]); // or try with "RSA"
-    cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-    let encrypted = cipher.doFinal(Base64.decode(plainb, Base64.DEFAULT));
-    return Base64.encodeToString(encrypted, Base64.DEFAULT);
+    if (Object.keys(this.rsaEncPaddingEncodingType).indexOf(padding) === -1) {
+      throw new Error(`encryptRSA padding "${padding}" not found!`);
+    }
+    let _pub_key_pem = pub_key_pem.replace(
+      /-----BEGIN PUBLIC KEY-----(\r)*(\n)*/,
+      ''
+    );
+    _pub_key_pem = _pub_key_pem.replace(
+      /(\r)*(\n)*-----END PUBLIC KEY-----(\r)*(\n)*/,
+      ''
+    );
+    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.DEFAULT);
+    const pub_parameters = PublicKeyFactory.createKey(public_key_bytes);
+    const plain_data = Base64.decode(plainb, Base64.DEFAULT);
+    let engine;
+    if (padding === 'oaep') {
+      engine = new this.rsaEncPaddingEncodingType[padding](
+        new RSAEngine(),
+        new SHA1Digest(),
+        new SHA1Digest(),
+        null
+      );
+    } else if (padding === 'pkcs1') {
+      engine = new this.rsaEncPaddingEncodingType[padding](new RSAEngine());
+    }
+    engine.init(true, pub_parameters);
+    const encrypted = engine.processBlock(plain_data, 0, plain_data.length);
+    return Base64.encodeToString(encrypted, Base64.DEFAULT).trim();
   }
   decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string {
-    priv_key_pem = priv_key_pem.replace(
-      '-----BEGIN RSA PRIVATE KEY-----\n',
+    if (Object.keys(this.rsaEncPaddingEncodingType).indexOf(padding) === -1) {
+      throw new Error(`decryptRSA padding "${padding}" not found!`);
+    }
+    let _priv_key_pem = priv_key_pem.replace(
+      /-----BEGIN RSA PRIVATE KEY-----(\r)*(\n)*/,
       ''
     );
-    priv_key_pem = priv_key_pem.replace('-----END RSA PRIVATE KEY-----', '');
-    let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
-    let keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-    let keyFactory = KeyFactory.getInstance('RSA');
-    let privKey = keyFactory.generatePrivate(keySpec);
-    let cipher = Cipher.getInstance(this.rsaEncPaddingType[padding]); // or try with "RSA"
-    cipher.init(Cipher.DECRYPT_MODE, privKey);
-    let paintb = cipher.doFinal(Base64.decode(cipherb, Base64.DEFAULT));
-    return Base64.encodeToString(paintb, Base64.DEFAULT);
+    _priv_key_pem = _priv_key_pem.replace(
+      /(\r)*(\n)*-----END RSA PRIVATE KEY-----(\r)*(\n)*/,
+      ''
+    );
+
+    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.DEFAULT);
+    const privParameters = PrivateKeyFactory.createKey(private_key_bytes);
+    const cipher_data = Base64.decode(cipherb, Base64.DEFAULT);
+    let engine;
+    if (padding === 'oaep') {
+      engine = new this.rsaEncPaddingEncodingType[padding](
+        new RSAEngine(),
+        new SHA1Digest(),
+        new SHA1Digest(),
+        null
+      );
+    } else if (padding === 'pkcs1') {
+      engine = new this.rsaEncPaddingEncodingType[padding](new RSAEngine());
+    }
+    engine.init(false, privParameters);
+    const decrypted = engine.processBlock(cipher_data, 0, cipher_data.length);
+    return Base64.encodeToString(decrypted, Base64.DEFAULT).trim();
   }
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
-    priv_key_pem = priv_key_pem.replace(
-      '-----BEGIN RSA PRIVATE KEY-----\n',
+    if (Object.keys(this.rsaSigDigestType).indexOf(digest_type) === -1) {
+      throw new Error(`signRSA digest type "${digest_type}" not found!`);
+    }
+    let _priv_key_pem = priv_key_pem.replace(
+      /-----BEGIN RSA PRIVATE KEY-----(\r)*(\n)*/,
       ''
     );
-    priv_key_pem = priv_key_pem.replace('-----END RSA PRIVATE KEY-----', '');
-    let privateKeyBytes = Base64.decode(priv_key_pem, Base64.DEFAULT);
-    let keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-    let keyFactory = KeyFactory.getInstance('RSA');
-    let privKey = keyFactory.generatePrivate(keySpec);
-    let signature = Signature.getInstance(this.rsaSigDigestType[digest_type]);
-    signature.initSign(privKey);
-    signature.update(Base64.decode(messageb, Base64.DEFAULT));
-    let signatureBytes = signature.sign();
-    return Base64.encodeToString(signatureBytes, Base64.DEFAULT);
+    _priv_key_pem = _priv_key_pem.replace(
+      /(\r)*(\n)*-----END RSA PRIVATE KEY-----(\r)*(\n)*/,
+      ''
+    );
+
+    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.DEFAULT);
+    const priv_parameters = PrivateKeyFactory.createKey(private_key_bytes);
+    const signer = new RSADigestSigner(
+      new this.rsaSigDigestType[digest_type]()
+    );
+    signer.init(true, priv_parameters);
+    const message_bytes = Base64.decode(messageb, Base64.DEFAULT);
+    signer.update(message_bytes, 0, message_bytes.length);
+    const signature_bytes = signer.generateSignature();
+    return Base64.encodeToString(signature_bytes, Base64.DEFAULT).trim();
   }
   verifyRSA(
     pub_key_pem: string,
@@ -449,16 +487,26 @@ export class NSCrypto implements INSCryto {
     signatureb: string,
     digest_type: string
   ): boolean {
-    pub_key_pem = pub_key_pem.replace('-----BEGIN PUBLIC KEY-----\n', '');
-    pub_key_pem = pub_key_pem.replace('-----END PUBLIC KEY-----', '');
-    let publicKeyBytes = Base64.decode(pub_key_pem, Base64.DEFAULT);
-    let keySpec = new X509EncodedKeySpec(publicKeyBytes);
-    let keyFactory = KeyFactory.getInstance('RSA');
-    let pubKey = keyFactory.generatePublic(keySpec);
-    let signature = Signature.getInstance(this.rsaSigDigestType[digest_type]);
-    signature.initVerify(pubKey);
-    signature.update(Base64.decode(messageb, Base64.DEFAULT));
-    return signature.verify(Base64.decode(signatureb, Base64.DEFAULT));
+    if (Object.keys(this.rsaSigDigestType).indexOf(digest_type) === -1) {
+      throw new Error(`verifyRSA digest type "${digest_type}" not found!`);
+    }
+    let _pub_key_pem = pub_key_pem.replace(
+      /-----BEGIN PUBLIC KEY-----(\r)*(\n)*/,
+      ''
+    );
+    _pub_key_pem = _pub_key_pem.replace(
+      /(\r)*(\n)*-----END PUBLIC KEY-----(\r)*(\n)*/,
+      ''
+    );
+    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.DEFAULT);
+    const pub_parameters = PublicKeyFactory.createKey(public_key_bytes);
+    const signer = new RSADigestSigner(
+      new this.rsaSigDigestType[digest_type]()
+    );
+    signer.init(false, pub_parameters);
+    const message_bytes = Base64.decode(messageb, Base64.DEFAULT);
+    signer.update(message_bytes, 0, message_bytes.length);
+    return signer.verifySignature(Base64.decode(signatureb, Base64.DEFAULT));
   }
 
   deflate(input: string): string {
@@ -470,7 +518,7 @@ export class NSCrypto implements INSCryto {
     let compressedDataLength = compresser.deflate(output);
     compresser.end();
     output = Arrays.copyOf(output, compressedDataLength);
-    return Base64.encodeToString(output, Base64.DEFAULT);
+    return Base64.encodeToString(output, Base64.DEFAULT).trim();
   }
   inflate(input: string): string {
     let data = Base64.decode(input, Base64.DEFAULT);
@@ -480,12 +528,12 @@ export class NSCrypto implements INSCryto {
     let decompressedDataLength = decompresser.inflate(output);
     decompresser.end();
     output = Arrays.copyOf(output, decompressedDataLength);
-    return Base64.encodeToString(output, Base64.DEFAULT);
+    return Base64.encodeToString(output, Base64.DEFAULT).trim();
   }
 
   base64encode(input: string): string {
     input = new java.lang.String(input).getBytes(StandardCharsets.UTF_8);
-    return Base64.encodeToString(input, Base64.DEFAULT);
+    return Base64.encodeToString(input, Base64.DEFAULT).trim();
   }
 
   base64decode(input: string): string {
@@ -503,7 +551,7 @@ export class NSCrypto implements INSCryto {
     const cipher = new KeyWrapEngine(new AESEngine());
     cipher.init(true, new KeyParameter(wrappingKey_bytes));
     const wrappedkey_bytes = cipher.wrap(key_bytes, 0, key_bytes.length);
-    return Base64.encodeToString(wrappedkey_bytes, Base64.DEFAULT);
+    return Base64.encodeToString(wrappedkey_bytes, Base64.DEFAULT).trim();
   }
   keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
     const unwrappingKey_bytes = Base64.decode(unwrappingKey, Base64.DEFAULT);
@@ -512,6 +560,6 @@ export class NSCrypto implements INSCryto {
     const cipher = new KeyWrapEngine(new AESEngine());
     cipher.init(false, new KeyParameter(unwrappingKey_bytes));
     const key = cipher.unwrap(wrappedkey_bytes, 0, wrappedkey_bytes.length);
-    return Base64.encodeToString(key, Base64.DEFAULT);
+    return Base64.encodeToString(key, Base64.DEFAULT).trim();
   }
 }

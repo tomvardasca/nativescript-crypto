@@ -137,21 +137,32 @@ export function deriveSecureKey() {
 export function encryptRSA() {
   let start = new Date().getTime();
   let enc = crypto.encryptRSA(
+    //     `-----BEGIN PUBLIC KEY-----
+    // MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyYkXNjFBK1Am+XX6p31C
+    // E6Il41Swr/Wgd23B6oIvcWMv+JRnTZijB86T9tipOOnd2xKjkP0R19KN1rlCOsKN
+    // bbN7eL5BZPtseDoBoEEU/LWTvgn+eMWykSSb/31OqCa29HT7wB8K8k1SvkhhrP/E
+    // f3mKE8dRt1rPBDdKW7ZeyztP1v9s1vRPPkSkVSNAnlniecdaKz/mNT0yNUvl8ra+
+    // CcGBRPTt3MKLRCOpA8oGckMkGEYBC9MFdICEuu2Jj9d8ay7tL4zQ6Iyg+jkqiz2o
+    // 4ib6QwUp1++zv+QDTDwong5HLANrNaSwkHEG6fIY+09KPBMR0DhonsK53uHPHBLm
+    // tQIDAQAB
+    // -----END PUBLIC KEY-----`,
     `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyYkXNjFBK1Am+XX6p31C
-E6Il41Swr/Wgd23B6oIvcWMv+JRnTZijB86T9tipOOnd2xKjkP0R19KN1rlCOsKN
-bbN7eL5BZPtseDoBoEEU/LWTvgn+eMWykSSb/31OqCa29HT7wB8K8k1SvkhhrP/E
-f3mKE8dRt1rPBDdKW7ZeyztP1v9s1vRPPkSkVSNAnlniecdaKz/mNT0yNUvl8ra+
-CcGBRPTt3MKLRCOpA8oGckMkGEYBC9MFdICEuu2Jj9d8ay7tL4zQ6Iyg+jkqiz2o
-4ib6QwUp1++zv+QDTDwong5HLANrNaSwkHEG6fIY+09KPBMR0DhonsK53uHPHBLm
-tQIDAQAB
------END PUBLIC KEY-----`,
-    'gSpGS+z6HtMeQ/CUJFHL6Wwx6OLNRyXvtBS0x8GXs7VNCMq2xc26ovO2Pj+5pOdGQ8PiT6ppbd8XB9wiFya5Mg==',
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs9VMXCDY1IyyinC+GRsC
+4VkDp4LKV1dXSQyNGxodT5278H9+/SPaKakFG5tKVWvlqX3wyXq1OfXBeEAKiAy6
+2nKWppCTq7rEa0+iChy2fl4uE/qydgyLgBoTqK4Rl1uob9tjiKdDKCp1+WHWFmnQ
+8gAZwJparazFOCW/KoLyVEMxtx/2eWoeXzef40Qo+lm1viLQnwQ6qmEiaRgLGIpK
+w8fhS5arj1JZid9jZSTAlVsec0IQQGvFUjvKBQBrV/vjwM4oO3TKpyjTEtyXYtGS
+ToHZka3oruXY9nFSt/5sFcsrYjYPsdYB9ybI43zm5jYOPzKKSzMkeweu9KVjC6Lx
+PQIDAQAB
+-----END PUBLIC KEY-----
+`,
+    'bHFKkSoHAYbMMg5IkgturPZe1BAaw8GLSOQeZjhQ2U4=',
     'oaep'
   );
   console.log(
     'crypto.encryptRSA: ',
-    'gSpGS+z6HtMeQ/CUJFHL6Wwx6OLNRyXvtBS0x8GXs7VNCMq2xc26ovO2Pj+5pOdGQ8PiT6ppbd8XB9wiFya5Mg==',
+    '123',
+    crypto.base64encode('123'),
     enc,
     ' elapsed ',
     new Date().getTime() - start + 'ms'
