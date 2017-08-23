@@ -324,3 +324,45 @@ export function encryptAES256GCM() {
     new Date().getTime() - start + 'ms'
   );
 }
+
+export function encryptAEAD() {
+  // let benchSTR = '';
+  // const possible =
+  //   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // for (let i = 0; i < 1000000; i++) {
+  //   benchSTR += possible.charAt(Math.floor(Math.random() * possible.length));
+  // }
+  let encodedString = crypto.base64encode('abcd'); //benchSTR);
+  let salt = crypto.secureRandomBytes(crypto.secureSymetricAEADnonceLength());
+  let key = crypto.secureRandomBytes(crypto.secureSymetricAEADkeyLength());
+  let start = new Date().getTime();
+  let enc = crypto.encryptSecureSymetricAEAD(
+    key,
+    encodedString,
+    crypto.base64encode('aad'),
+    salt
+  );
+  // enc = JSON.parse(
+  //   ' {"cipherb":"EyXQdtYmN3U=","atag":"TMriPJGYM+Lev6kTzSJqkA=="}'
+  //  );
+  console.log(
+    'crypto.encryptAEAD: ',
+    encodedString,
+    '| secureSymetricAEADkeyLength: ',
+    crypto.secureSymetricAEADkeyLength(),
+    '| secureSymetricAEADnonceLength: ',
+    crypto.secureSymetricAEADnonceLength(),
+    '| enc: ',
+    JSON.stringify(enc),
+    '| result: ',
+    crypto.decryptSecureSymetricAEAD(
+      key,
+      enc.cipherb,
+      crypto.base64encode('aad'),
+      salt,
+      enc.alg
+    ),
+    ' elapsed',
+    new Date().getTime() - start + 'ms'
+  );
+}

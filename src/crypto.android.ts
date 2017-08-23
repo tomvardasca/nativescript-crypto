@@ -193,10 +193,10 @@ export class NSCrypto implements INSCryto {
   }
 
   secureSymetricAEADkeyLength(): number {
-    return Sodium.crypto_aead_chacha20poly1305_ietf_keybytes();
+    return Sodium.crypto_aead_chacha20poly1305_keybytes();
   }
   secureSymetricAEADnonceLength(): number {
-    return Sodium.crypto_aead_chacha20poly1305_ietf_npubbytes();
+    return Sodium.crypto_aead_chacha20poly1305_npubbytes();
   }
 
   encryptSecureSymetricAEAD(
@@ -219,25 +219,46 @@ export class NSCrypto implements INSCryto {
     const plainb_bytes = Base64.decode(plainb, Base64.DEFAULT);
     const cipherb = Array.create(
       'byte',
-      plainb_bytes.length + Sodium.crypto_aead_chacha20poly1305_ietf_abytes()
+      plainb_bytes.length + Sodium.crypto_aead_chacha20poly1305_abytes()
     );
     const clen_p = Array.create('int', 1);
     const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
     const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
 
-    Sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
-      cipherb,
-      clen_p,
-      plainb_bytes,
-      plainb_bytes.length,
-      aad_bytes,
-      aad_bytes.length,
-      pnonce_bytes,
-      null,
-      key_bytes
+    // ["decryptSecureSymetricAEAD",{"length":20},{"length":1},{"length":4},4,{"length":3},3,{"length":0},{"length":8},{"length":32}]
+
+    console.log(
+      JSON.stringify([
+        'decryptSecureSymetricAEAD',
+        cipherb,
+        clen_p,
+        plainb_bytes,
+        plainb_bytes.length,
+        aad_bytes,
+        aad_bytes.length,
+        Array.create('byte', 0),
+        pnonce_bytes,
+        key_bytes
+      ])
     );
+
+    if (
+      Sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
+        cipherb,
+        clen_p,
+        plainb_bytes,
+        plainb_bytes.length,
+        aad_bytes,
+        aad_bytes.length,
+        Array.create('byte', 0),
+        pnonce_bytes,
+        key_bytes
+      ) != 0
+    ) {
+      throw new Error('Error on crypto_aead_chacha20poly1305_ietf_encrypt');
+    }
     return {
-      cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT),
+      cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT).trim(),
       alg: 'chacha20poly1305_ietf'
     };
   }
@@ -258,26 +279,48 @@ export class NSCrypto implements INSCryto {
 
     const plaint_bytes = Array.create(
       'byte',
-      cipherb_bytes.length - Sodium.crypto_aead_chacha20poly1305_ietf_abytes()
+      cipherb_bytes.length - Sodium.crypto_aead_chacha20poly1305_abytes()
     );
     const mlen_p = Array.create('int', 1);
-    const aad_bytes = new java.lang.String(aad).getBytes(
-      StandardCharsets.UTF_8
-    );
+    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
     const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
 
-    Sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
-      plaint_bytes,
-      mlen_p,
-      cipherb_bytes,
-      cipherb_bytes.length,
-      aad_bytes,
-      aad_bytes.length,
-      pnonce_bytes,
-      null,
-      key_bytes
+    console.log(
+      JSON.stringify([
+        'decryptSecureSymetricAEAD',
+        plaint_bytes,
+        mlen_p,
+        Array.create('byte', 0),
+        cipherb_bytes,
+        cipherb_bytes.length,
+        aad_bytes,
+        aad_bytes.length,
+        pnonce_bytes,
+        key_bytes
+      ])
     );
-    return Base64.encodeToString(plaint_bytes, Base64.DEFAULT).trim();
+
+    // ["decryptSecureSymetricAEAD",{"length":4},{"length":1},{"length":0},{"length":20},20,{"length":4},4,{"length":8},{"length":32}]
+
+    if (
+      Sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+        plaint_bytes,
+        mlen_p,
+        Array.create('byte', 0),
+        cipherb_bytes,
+        cipherb_bytes.length,
+        aad_bytes,
+        aad_bytes.length,
+        pnonce_bytes,
+        key_bytes
+      ) != 0
+    ) {
+      throw new Error('Error on crypto_aead_chacha20poly1305_ietf_decrypt');
+    }
+    return Base64.encodeToString(
+      Arrays.copyOf(plaint_bytes, mlen_p[0]),
+      Base64.DEFAULT
+    ).trim();
   }
 
   encryptAES256GCM(
