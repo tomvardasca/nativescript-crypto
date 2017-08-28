@@ -78,6 +78,59 @@ export const asciiToBase64 = (str: string) => {
   return t;
 };
 
+export const base64ToArrayBuffer = (str: string) => {
+  const arr = new Array<number>();
+  let n, r, i;
+  let s, o, u, a;
+  let f = 0;
+  str = str.replace(/[^A-Za-z0-9+/=]/g, '');
+  while (f < str.length) {
+    s = base64map.indexOf(str.charAt(f++));
+    o = base64map.indexOf(str.charAt(f++));
+    u = base64map.indexOf(str.charAt(f++));
+    a = base64map.indexOf(str.charAt(f++));
+    n = (s << 2) | (o >> 4);
+    r = ((o & 15) << 4) | (u >> 2);
+    i = ((u & 3) << 6) | a;
+    arr.push(n);
+    if (u !== 64) {
+      arr.push(r);
+    }
+    if (a !== 64) {
+      arr.push(i);
+    }
+  }
+  return new Uint8Array(arr).buffer;
+};
+
+export const arrayBufferToBase64 = (ab: ArrayBuffer) => {
+  const ui_arr = new Uint8Array(ab);
+  let t = '';
+  let n, r, i, s, o, u, a;
+  let f = 0;
+  while (f < ui_arr.length) {
+    n = ui_arr[f++];
+    r = ui_arr[f++];
+    i = ui_arr[f++];
+    s = n >> 2;
+    o = ((n & 3) << 4) | (r >> 4);
+    u = ((r & 15) << 2) | (i >> 6);
+    a = i & 63;
+    if (isNaN(r)) {
+      u = a = 64;
+    } else if (isNaN(i)) {
+      a = 64;
+    }
+    t =
+      t +
+      base64map.charAt(s) +
+      base64map.charAt(o) +
+      base64map.charAt(u) +
+      base64map.charAt(a);
+  }
+  return t;
+};
+
 export const base64ToASCII = (str: string) => {
   let t = '';
   let n, r, i;
@@ -104,325 +157,144 @@ export const base64ToASCII = (str: string) => {
   return t;
 };
 
+const lookup = [];
+const revLookup = [];
+
+const code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+for (let i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i];
+  revLookup[code.charCodeAt(i)] = i;
+}
+
+revLookup['-'.charCodeAt(0)] = 62;
+revLookup['_'.charCodeAt(0)] = 63;
+
+const placeHoldersCount = (b64: string) => {
+  let len = b64.length;
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4');
+  }
+
+  // the number of equal signs (place holders)
+  // if there are two placeholders, than the two characters before it
+  // represent one byte
+  // if there is only one, then the three characters before it represent 2 bytes
+  // this is just a cheap hack to not do indexOf twice
+  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
+};
+
+const byteLength = (b64: string) => {
+  // base64 is 4/3 + up to two characters of the original data
+  return b64.length * 3 / 4 - placeHoldersCount(b64);
+};
+
+export const stringToArrayBuffer = (b64: string): ArrayBuffer => {
+  let i, l, tmp, placeHolders, arr: Uint8Array;
+  let len = b64.length;
+  placeHolders = placeHoldersCount(b64);
+
+  arr = new Uint8Array(len * 3 / 4 - placeHolders);
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  l = placeHolders > 0 ? len - 4 : len;
+
+  let L = 0;
+
+  for (i = 0; i < l; i += 4) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 18) |
+      (revLookup[b64.charCodeAt(i + 1)] << 12) |
+      (revLookup[b64.charCodeAt(i + 2)] << 6) |
+      revLookup[b64.charCodeAt(i + 3)];
+    arr[L++] = (tmp >> 16) & 0xff;
+    arr[L++] = (tmp >> 8) & 0xff;
+    arr[L++] = tmp & 0xff;
+  }
+
+  if (placeHolders === 2) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 2) |
+      (revLookup[b64.charCodeAt(i + 1)] >> 4);
+    arr[L++] = tmp & 0xff;
+  } else if (placeHolders === 1) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 10) |
+      (revLookup[b64.charCodeAt(i + 1)] << 4) |
+      (revLookup[b64.charCodeAt(i + 2)] >> 2);
+    arr[L++] = (tmp >> 8) & 0xff;
+    arr[L++] = tmp & 0xff;
+  }
+
+  return arr.buffer;
+};
+
+const tripletToBase64 = num => {
+  return (
+    lookup[(num >> 18) & 0x3f] +
+    lookup[(num >> 12) & 0x3f] +
+    lookup[(num >> 6) & 0x3f] +
+    lookup[num & 0x3f]
+  );
+};
+
+const encodeChunk = (uint8, start, end) => {
+  let tmp;
+  let output = [];
+  for (let i = start; i < end; i += 3) {
+    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
+    output.push(tripletToBase64(tmp));
+  }
+  return output.join('');
+};
+
+export const arrayBufferToString = (arr: ArrayBuffer): string => {
+  let tmp;
+  const uint8 = new Uint8Array(arr);
+  let len = uint8.length;
+  let extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+  let output = '';
+  let parts = [];
+  let maxChunkLength = 16383; // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (let i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(
+      encodeChunk(
+        uint8,
+        i,
+        i + maxChunkLength > len2 ? len2 : i + maxChunkLength
+      )
+    );
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1];
+    output += lookup[tmp >> 2];
+    output += lookup[(tmp << 4) & 0x3f];
+    output += '==';
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1];
+    output += lookup[tmp >> 10];
+    output += lookup[(tmp >> 4) & 0x3f];
+    output += lookup[(tmp << 2) & 0x3f];
+    output += '=';
+  }
+
+  parts.push(output);
+
+  return parts.join('');
+};
+
 export const stringToBase64 = (str: string) => asciiToBase64(encodeUTF8(str));
 
 export const base64ToString = (str: string) => decodeUTF8(base64ToASCII(str));
 
-// Use a lookup table to find the index.
-const lookup = {
-  '0': 0,
-  '1': 0,
-  '2': 0,
-  '3': 0,
-  '4': 0,
-  '5': 0,
-  '6': 0,
-  '7': 0,
-  '8': 0,
-  '9': 0,
-  '10': 0,
-  '11': 0,
-  '12': 0,
-  '13': 0,
-  '14': 0,
-  '15': 0,
-  '16': 0,
-  '17': 0,
-  '18': 0,
-  '19': 0,
-  '20': 0,
-  '21': 0,
-  '22': 0,
-  '23': 0,
-  '24': 0,
-  '25': 0,
-  '26': 0,
-  '27': 0,
-  '28': 0,
-  '29': 0,
-  '30': 0,
-  '31': 0,
-  '32': 0,
-  '33': 0,
-  '34': 0,
-  '35': 0,
-  '36': 0,
-  '37': 0,
-  '38': 0,
-  '39': 0,
-  '40': 0,
-  '41': 0,
-  '42': 0,
-  '43': 62,
-  '44': 0,
-  '45': 0,
-  '46': 0,
-  '47': 63,
-  '48': 52,
-  '49': 53,
-  '50': 54,
-  '51': 55,
-  '52': 56,
-  '53': 57,
-  '54': 58,
-  '55': 59,
-  '56': 60,
-  '57': 61,
-  '58': 0,
-  '59': 0,
-  '60': 0,
-  '61': 0,
-  '62': 0,
-  '63': 0,
-  '64': 0,
-  '65': 0,
-  '66': 1,
-  '67': 2,
-  '68': 3,
-  '69': 4,
-  '70': 5,
-  '71': 6,
-  '72': 7,
-  '73': 8,
-  '74': 9,
-  '75': 10,
-  '76': 11,
-  '77': 12,
-  '78': 13,
-  '79': 14,
-  '80': 15,
-  '81': 16,
-  '82': 17,
-  '83': 18,
-  '84': 19,
-  '85': 20,
-  '86': 21,
-  '87': 22,
-  '88': 23,
-  '89': 24,
-  '90': 25,
-  '91': 0,
-  '92': 0,
-  '93': 0,
-  '94': 0,
-  '95': 0,
-  '96': 0,
-  '97': 26,
-  '98': 27,
-  '99': 28,
-  '100': 29,
-  '101': 30,
-  '102': 31,
-  '103': 32,
-  '104': 33,
-  '105': 34,
-  '106': 35,
-  '107': 36,
-  '108': 37,
-  '109': 38,
-  '110': 39,
-  '111': 40,
-  '112': 41,
-  '113': 42,
-  '114': 43,
-  '115': 44,
-  '116': 45,
-  '117': 46,
-  '118': 47,
-  '119': 48,
-  '120': 49,
-  '121': 50,
-  '122': 51,
-  '123': 0,
-  '124': 0,
-  '125': 0,
-  '126': 0,
-  '127': 0,
-  '128': 0,
-  '129': 0,
-  '130': 0,
-  '131': 0,
-  '132': 0,
-  '133': 0,
-  '134': 0,
-  '135': 0,
-  '136': 0,
-  '137': 0,
-  '138': 0,
-  '139': 0,
-  '140': 0,
-  '141': 0,
-  '142': 0,
-  '143': 0,
-  '144': 0,
-  '145': 0,
-  '146': 0,
-  '147': 0,
-  '148': 0,
-  '149': 0,
-  '150': 0,
-  '151': 0,
-  '152': 0,
-  '153': 0,
-  '154': 0,
-  '155': 0,
-  '156': 0,
-  '157': 0,
-  '158': 0,
-  '159': 0,
-  '160': 0,
-  '161': 0,
-  '162': 0,
-  '163': 0,
-  '164': 0,
-  '165': 0,
-  '166': 0,
-  '167': 0,
-  '168': 0,
-  '169': 0,
-  '170': 0,
-  '171': 0,
-  '172': 0,
-  '173': 0,
-  '174': 0,
-  '175': 0,
-  '176': 0,
-  '177': 0,
-  '178': 0,
-  '179': 0,
-  '180': 0,
-  '181': 0,
-  '182': 0,
-  '183': 0,
-  '184': 0,
-  '185': 0,
-  '186': 0,
-  '187': 0,
-  '188': 0,
-  '189': 0,
-  '190': 0,
-  '191': 0,
-  '192': 0,
-  '193': 0,
-  '194': 0,
-  '195': 0,
-  '196': 0,
-  '197': 0,
-  '198': 0,
-  '199': 0,
-  '200': 0,
-  '201': 0,
-  '202': 0,
-  '203': 0,
-  '204': 0,
-  '205': 0,
-  '206': 0,
-  '207': 0,
-  '208': 0,
-  '209': 0,
-  '210': 0,
-  '211': 0,
-  '212': 0,
-  '213': 0,
-  '214': 0,
-  '215': 0,
-  '216': 0,
-  '217': 0,
-  '218': 0,
-  '219': 0,
-  '220': 0,
-  '221': 0,
-  '222': 0,
-  '223': 0,
-  '224': 0,
-  '225': 0,
-  '226': 0,
-  '227': 0,
-  '228': 0,
-  '229': 0,
-  '230': 0,
-  '231': 0,
-  '232': 0,
-  '233': 0,
-  '234': 0,
-  '235': 0,
-  '236': 0,
-  '237': 0,
-  '238': 0,
-  '239': 0,
-  '240': 0,
-  '241': 0,
-  '242': 0,
-  '243': 0,
-  '244': 0,
-  '245': 0,
-  '246': 0,
-  '247': 0,
-  '248': 0,
-  '249': 0,
-  '250': 0,
-  '251': 0,
-  '252': 0,
-  '253': 0,
-  '254': 0,
-  '255': 0
-};
+// export const arrayBufferToBase64 = (ab: ArrayBuffer) =>
+//   asciiToBase64(arrayBufferToString(ab));
 
-export const arrayBufferToBase64 = (ab: ArrayBuffer) => {
-  let bytes = new Uint8Array(ab),
-    i,
-    len = bytes.length,
-    base64 = '';
-
-  for (i = 0; i < len; i += 3) {
-    base64 += base64map[bytes[i] >> 2];
-    base64 += base64map[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
-    base64 += base64map[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
-    base64 += base64map[bytes[i + 2] & 63];
-  }
-
-  if (len % 3 === 2) {
-    base64 = base64.substring(0, base64.length - 1) + '=';
-  } else if (len % 3 === 1) {
-    base64 = base64.substring(0, base64.length - 2) + '==';
-  }
-
-  return base64;
-};
-
-export const base64ToArrayBuffer = (base64: string) => {
-  let bufferLength = base64.length * 0.75,
-    len = base64.length,
-    i,
-    p = 0,
-    encoded1,
-    encoded2,
-    encoded3,
-    encoded4;
-
-  if (base64[base64.length - 1] === '=') {
-    bufferLength--;
-    if (base64[base64.length - 2] === '=') {
-      bufferLength--;
-    }
-  }
-
-  let arraybuffer = new ArrayBuffer(bufferLength),
-    bytes = new Uint8Array(arraybuffer);
-
-  for (i = 0; i < len; i += 4) {
-    encoded1 = lookup[base64.charCodeAt(i)];
-    encoded2 = lookup[base64.charCodeAt(i + 1)];
-    encoded3 = lookup[base64.charCodeAt(i + 2)];
-    encoded4 = lookup[base64.charCodeAt(i + 3)];
-
-    bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-    bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-    bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-  }
-
-  return arraybuffer;
-};
+// export const base64ToArrayBuffer = (base64: string) =>
+//   stringToArrayBuffer(base64ToASCII(base64));
 
 export const hexToBase64 = h => {
   let i;
@@ -589,23 +461,23 @@ export const stringToArray = (s: string) => {
   return a;
 };
 
-export const stringToArrayBuffer = (s: string): ArrayBuffer => {
-  let a: Uint8Array = new Uint8Array(s.length);
-  for (let i = 0; i < s.length; i++) {
-    a[i] = s.charCodeAt(i) & 0xff;
-  }
-  return a.buffer;
-};
+// export const stringToArrayBuffer = (s: string): ArrayBuffer => {
+//   let a: Uint8Array = new Uint8Array(s.length);
+//   for (let i = 0; i < s.length; i++) {
+//     a[i] = s.charCodeAt(i) & 0xff;
+//   }
+//   return a.buffer;
+// };
 
-export const arrayBufferToString = (a: ArrayBuffer): string => {
-  const array = new Uint8Array(a);
-  let str = '';
+// export const arrayBufferToString = (a: ArrayBuffer): string => {
+//   const array = new Uint8Array(a);
+//   let str = '';
 
-  for (let i = 0; i < array.length; i++) {
-    str += String.fromCharCode(array[i]);
-  }
-  return str;
-};
+//   for (let i = 0; i < array.length; i++) {
+//     str += String.fromCharCode(array[i]);
+//   }
+//   return str;
+// };
 
 export const arrayToHex = (a: number[]) => {
   let s = '';
@@ -620,3 +492,46 @@ export const arrayToHex = (a: number[]) => {
 };
 
 export const stringToHex = (s: string) => arrayToHex(stringToArray(s));
+
+export const arrayBufferToUTF8 = (ab: ArrayBuffer) => {
+  const bytes = new Uint8Array(ab);
+  var s = '';
+  var i = 0;
+  while (i < bytes.length) {
+    var c = bytes[i++];
+    if (c > 127) {
+      if (c > 191 && c < 224) {
+        if (i >= bytes.length) throw 'UTF-8 decode: incomplete 2-byte sequence';
+        c = ((c & 31) << 6) | (bytes[i] & 63);
+      } else if (c > 223 && c < 240) {
+        if (i + 1 >= bytes.length)
+          throw 'UTF-8 decode: incomplete 3-byte sequence';
+        c = ((c & 15) << 12) | ((bytes[i] & 63) << 6) | (bytes[++i] & 63);
+      } else if (c > 239 && c < 248) {
+        if (i + 2 >= bytes.length)
+          throw 'UTF-8 decode: incomplete 4-byte sequence';
+        c =
+          ((c & 7) << 18) |
+          ((bytes[i] & 63) << 12) |
+          ((bytes[++i] & 63) << 6) |
+          (bytes[++i] & 63);
+      } else
+        throw 'UTF-8 decode: unknown multibyte start 0x' +
+          c.toString(16) +
+          ' at index ' +
+          (i - 1);
+      ++i;
+    }
+
+    if (c <= 0xffff) s += String.fromCharCode(c);
+    else if (c <= 0x10ffff) {
+      c -= 0x10000;
+      s += String.fromCharCode((c >> 10) | 0xd800);
+      s += String.fromCharCode((c & 0x3ff) | 0xdc00);
+    } else
+      throw 'UTF-8 decode: code point 0x' +
+        c.toString(16) +
+        ' exceeds UTF-16 reach';
+  }
+  return s;
+};

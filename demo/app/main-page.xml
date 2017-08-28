@@ -8,7 +8,7 @@
     <Button text="signRSA/verifyRSA" tap="signRSA" />
     <Button text="deflate/inflate" tap="deflate_inflate" />
     <Button text="keyWrap/KeyUnWrap" tap="keyWrapUnWrap"/>
-		<Button text="encryptAES256GCM/decryptAES256GCM" tap="encryptAES256GCM"/>
-		<Button text="encryptAEAD/decryptAEAD" tap="encryptAEAD"/>
+		<Button text="encryptAES256GCM/decryptAES256GCM" tap="encryptAES256GCM_aa"/>
+		<Button text="encryptAEAD/decryptAEAD" tap="decryptAEAD_aa"/>
   </StackLayout>
 </Page>

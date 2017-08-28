@@ -82,7 +82,7 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this._hashTypeLibsodiumNamespace).indexOf(type) === -1) {
       throw new Error(`hash type "${type}" not found!`);
     }
-    input = Base64.decode(input, Base64.DEFAULT);
+    input = Base64.decode(input, Base64.NO_WRAP);
     Sodium.sodium_init();
     let hash_libsodium_namespace = this._hashTypeLibsodiumNamespace[type];
     let hash = Array.create(
@@ -90,14 +90,14 @@ export class NSCrypto implements INSCryto {
       Sodium[hash_libsodium_namespace + '_bytes']()
     );
     Sodium[hash_libsodium_namespace](hash, input, input.length);
-    return Base64.encodeToString(hash, Base64.DEFAULT).trim();
+    return Base64.encodeToString(hash, Base64.NO_WRAP);
   }
 
   secureRandomBytes(length: number): string {
     Sodium.sodium_init();
     let bytes = Array.create('byte', length);
     Sodium.randombytes_buf(bytes, length);
-    return Base64.encodeToString(bytes, Base64.DEFAULT).trim();
+    return Base64.encodeToString(bytes, Base64.NO_WRAP);
   }
 
   deriveSecureKey(
@@ -118,7 +118,7 @@ export class NSCrypto implements INSCryto {
     password = new java.lang.String(password).getBytes(StandardCharsets.UTF_8);
     let _salt;
     if (salt) {
-      _salt = Base64.decode(salt, Base64.DEFAULT);
+      _salt = Base64.decode(salt, Base64.NO_WRAP);
     }
     alg = alg || 'argon2i';
 
@@ -184,8 +184,8 @@ export class NSCrypto implements INSCryto {
       throw new Error(`deriveSecureKey algorithm "${alg}" not found`);
     }
     return {
-      key: Base64.encodeToString(derived_key, Base64.DEFAULT),
-      salt: Base64.encodeToString(_salt, Base64.DEFAULT),
+      key: Base64.encodeToString(derived_key, Base64.NO_WRAP),
+      salt: Base64.encodeToString(_salt, Base64.NO_WRAP),
       ops_limits: ops_limits,
       mem_limits: mem_limits,
       alg: alg
@@ -209,24 +209,24 @@ export class NSCrypto implements INSCryto {
     cipherb: string;
     alg: string;
   } {
-    if (alg && alg !== 'chacha20poly1305_ietf') {
+    if (alg && alg !== 'chacha20poly1305') {
       throw new Error(
         `decryptSecureSymetricAEAD algorith ${alg} not found or is not available in this hardware`
       );
     }
-
-    const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const plainb_bytes = Base64.decode(plainb, Base64.DEFAULT);
+    Sodium.sodium_init();
+    const key_bytes = Base64.decode(key, Base64.NO_WRAP);
+    const plainb_bytes = Base64.decode(plainb, Base64.NO_WRAP);
     const cipherb = Array.create(
       'byte',
       plainb_bytes.length + Sodium.crypto_aead_chacha20poly1305_abytes()
     );
     const clen_p = Array.create('int', 1);
-    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
-    const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
+    const aad_bytes = Base64.decode(aad, Base64.NO_WRAP);
+    const pnonce_bytes = Base64.decode(pnonce, Base64.NO_WRAP);
 
     if (
-      Sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
+      Sodium.crypto_aead_chacha20poly1305_encrypt(
         cipherb,
         clen_p,
         plainb_bytes,
@@ -238,11 +238,11 @@ export class NSCrypto implements INSCryto {
         key_bytes
       ) != 0
     ) {
-      throw new Error('Error on crypto_aead_chacha20poly1305_ietf_encrypt');
+      throw new Error('Error on crypto_aead_chacha20poly1305_encrypt');
     }
     return {
-      cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT).trim(),
-      alg: 'chacha20poly1305_ietf'
+      cipherb: Base64.encodeToString(cipherb, Base64.NO_WRAP),
+      alg: 'chacha20poly1305'
     };
   }
   decryptSecureSymetricAEAD(
@@ -252,24 +252,25 @@ export class NSCrypto implements INSCryto {
     pnonce: string,
     alg?: string
   ): string {
-    if (alg && alg !== 'chacha20poly1305_ietf') {
+    if (alg && alg !== 'chacha20poly1305') {
       throw new Error(
         `decryptSecureSymetricAEAD algorith ${alg} not found or is not available in this hardware`
       );
     }
-    const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const cipherb_bytes = Base64.decode(cipherb, Base64.DEFAULT);
+    Sodium.sodium_init();
+    const key_bytes = Base64.decode(key, Base64.NO_WRAP);
+    const cipherb_bytes = Base64.decode(cipherb, Base64.NO_WRAP);
 
     const plaint_bytes = Array.create(
       'byte',
       cipherb_bytes.length - Sodium.crypto_aead_chacha20poly1305_abytes()
     );
     const mlen_p = Array.create('int', 1);
-    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
-    const pnonce_bytes = Base64.decode(pnonce, Base64.DEFAULT);
+    const aad_bytes = Base64.decode(aad, Base64.NO_WRAP);
+    const pnonce_bytes = Base64.decode(pnonce, Base64.NO_WRAP);
 
     if (
-      Sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+      Sodium.crypto_aead_chacha20poly1305_decrypt(
         plaint_bytes,
         mlen_p,
         Array.create('byte', 0),
@@ -281,12 +282,12 @@ export class NSCrypto implements INSCryto {
         key_bytes
       ) != 0
     ) {
-      throw new Error('Error on crypto_aead_chacha20poly1305_ietf_decrypt');
+      throw new Error('Error on crypto_aead_chacha20poly1305_decrypt');
     }
     return Base64.encodeToString(
       Arrays.copyOf(plaint_bytes, mlen_p[0]),
-      Base64.DEFAULT
-    ).trim();
+      Base64.NO_WRAP
+    );
   }
 
   encryptAES256GCM(
@@ -299,10 +300,10 @@ export class NSCrypto implements INSCryto {
     cipherb: string;
     atag: string;
   } {
-    const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const plaint_bytes = Base64.decode(plaint, Base64.DEFAULT);
-    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
-    const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
+    const key_bytes = Base64.decode(key, Base64.NO_WRAP);
+    const plaint_bytes = Base64.decode(plaint, Base64.NO_WRAP);
+    const aad_bytes = Base64.decode(aad, Base64.NO_WRAP);
+    const iv_bytes = Base64.decode(iv, Base64.NO_WRAP);
 
     const cipher = new GCMBlockCipher(new AESEngine());
     cipher.init(
@@ -339,8 +340,8 @@ export class NSCrypto implements INSCryto {
     cipherb = Arrays.copyOfRange(cipherb, 0, cipherb.length - tagLength / 8);
 
     return {
-      cipherb: Base64.encodeToString(cipherb, Base64.DEFAULT),
-      atag: Base64.encodeToString(tagb, Base64.DEFAULT)
+      cipherb: Base64.encodeToString(cipherb, Base64.NO_WRAP),
+      atag: Base64.encodeToString(tagb, Base64.NO_WRAP)
     };
   }
   decryptAES256GCM(
@@ -350,11 +351,11 @@ export class NSCrypto implements INSCryto {
     iv: string,
     atag: string
   ): string {
-    const key_bytes = Base64.decode(key, Base64.DEFAULT);
-    const cipherb_bytes = Base64.decode(cipherb, Base64.DEFAULT);
-    const aad_bytes = Base64.decode(aad, Base64.DEFAULT);
-    const iv_bytes = Base64.decode(iv, Base64.DEFAULT);
-    const atag_bytes = Base64.decode(atag, Base64.DEFAULT);
+    const key_bytes = Base64.decode(key, Base64.NO_WRAP);
+    const cipherb_bytes = Base64.decode(cipherb, Base64.NO_WRAP);
+    const aad_bytes = Base64.decode(aad, Base64.NO_WRAP);
+    const iv_bytes = Base64.decode(iv, Base64.NO_WRAP);
+    const atag_bytes = Base64.decode(atag, Base64.NO_WRAP);
 
     // we will concat the authentication tag to the ciphertext array
     const cipherb_bytes_complete = Array.create(
@@ -402,7 +403,7 @@ export class NSCrypto implements INSCryto {
 
     cipher.doFinal(plainb_bytes, outputLen);
 
-    return Base64.encodeToString(plainb_bytes, Base64.DEFAULT).trim();
+    return Base64.encodeToString(plainb_bytes, Base64.NO_WRAP);
   }
 
   encryptRSA(pub_key_pem: string, plainb: string, padding: string): string {
@@ -417,9 +418,9 @@ export class NSCrypto implements INSCryto {
       /(\r)*(\n)*-----END PUBLIC KEY-----(\r)*(\n)*/,
       ''
     );
-    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.DEFAULT);
+    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.NO_WRAP);
     const pub_parameters = PublicKeyFactory.createKey(public_key_bytes);
-    const plain_data = Base64.decode(plainb, Base64.DEFAULT);
+    const plain_data = Base64.decode(plainb, Base64.NO_WRAP);
     let engine;
     if (padding === 'oaep') {
       engine = new this.rsaEncPaddingEncodingType[padding](
@@ -433,7 +434,7 @@ export class NSCrypto implements INSCryto {
     }
     engine.init(true, pub_parameters);
     const encrypted = engine.processBlock(plain_data, 0, plain_data.length);
-    return Base64.encodeToString(encrypted, Base64.DEFAULT).trim();
+    return Base64.encodeToString(encrypted, Base64.NO_WRAP);
   }
   decryptRSA(priv_key_pem: string, cipherb: string, padding: string): string {
     if (Object.keys(this.rsaEncPaddingEncodingType).indexOf(padding) === -1) {
@@ -448,9 +449,9 @@ export class NSCrypto implements INSCryto {
       ''
     );
 
-    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.DEFAULT);
+    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.NO_WRAP);
     const privParameters = PrivateKeyFactory.createKey(private_key_bytes);
-    const cipher_data = Base64.decode(cipherb, Base64.DEFAULT);
+    const cipher_data = Base64.decode(cipherb, Base64.NO_WRAP);
     let engine;
     if (padding === 'oaep') {
       engine = new this.rsaEncPaddingEncodingType[padding](
@@ -464,7 +465,7 @@ export class NSCrypto implements INSCryto {
     }
     engine.init(false, privParameters);
     const decrypted = engine.processBlock(cipher_data, 0, cipher_data.length);
-    return Base64.encodeToString(decrypted, Base64.DEFAULT).trim();
+    return Base64.encodeToString(decrypted, Base64.NO_WRAP);
   }
   signRSA(priv_key_pem: string, messageb: string, digest_type: string): string {
     if (Object.keys(this.rsaSigDigestType).indexOf(digest_type) === -1) {
@@ -479,16 +480,16 @@ export class NSCrypto implements INSCryto {
       ''
     );
 
-    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.DEFAULT);
+    const private_key_bytes = Base64.decode(_priv_key_pem, Base64.NO_WRAP);
     const priv_parameters = PrivateKeyFactory.createKey(private_key_bytes);
     const signer = new RSADigestSigner(
       new this.rsaSigDigestType[digest_type]()
     );
     signer.init(true, priv_parameters);
-    const message_bytes = Base64.decode(messageb, Base64.DEFAULT);
+    const message_bytes = Base64.decode(messageb, Base64.NO_WRAP);
     signer.update(message_bytes, 0, message_bytes.length);
     const signature_bytes = signer.generateSignature();
-    return Base64.encodeToString(signature_bytes, Base64.DEFAULT).trim();
+    return Base64.encodeToString(signature_bytes, Base64.NO_WRAP);
   }
   verifyRSA(
     pub_key_pem: string,
@@ -507,19 +508,19 @@ export class NSCrypto implements INSCryto {
       /(\r)*(\n)*-----END PUBLIC KEY-----(\r)*(\n)*/,
       ''
     );
-    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.DEFAULT);
+    const public_key_bytes = Base64.decode(_pub_key_pem, Base64.NO_WRAP);
     const pub_parameters = PublicKeyFactory.createKey(public_key_bytes);
     const signer = new RSADigestSigner(
       new this.rsaSigDigestType[digest_type]()
     );
     signer.init(false, pub_parameters);
-    const message_bytes = Base64.decode(messageb, Base64.DEFAULT);
+    const message_bytes = Base64.decode(messageb, Base64.NO_WRAP);
     signer.update(message_bytes, 0, message_bytes.length);
-    return signer.verifySignature(Base64.decode(signatureb, Base64.DEFAULT));
+    return signer.verifySignature(Base64.decode(signatureb, Base64.NO_WRAP));
   }
 
   deflate(input: string): string {
-    let data = Base64.decode(input, Base64.DEFAULT);
+    let data = Base64.decode(input, Base64.NO_WRAP);
     let output = Array.create('byte', data.length);
     let compresser = new java.util.zip.Deflater();
     compresser.setInput(data, 0, data.length);
@@ -527,26 +528,26 @@ export class NSCrypto implements INSCryto {
     let compressedDataLength = compresser.deflate(output);
     compresser.end();
     output = Arrays.copyOf(output, compressedDataLength);
-    return Base64.encodeToString(output, Base64.DEFAULT).trim();
+    return Base64.encodeToString(output, Base64.NO_WRAP);
   }
   inflate(input: string): string {
-    let data = Base64.decode(input, Base64.DEFAULT);
+    let data = Base64.decode(input, Base64.NO_WRAP);
     let decompresser = new java.util.zip.Inflater();
     decompresser.setInput(data, 0, data.length);
     let output = Array.create('byte', data.length * 20);
     let decompressedDataLength = decompresser.inflate(output);
     decompresser.end();
     output = Arrays.copyOf(output, decompressedDataLength);
-    return Base64.encodeToString(output, Base64.DEFAULT).trim();
+    return Base64.encodeToString(output, Base64.NO_WRAP);
   }
 
   base64encode(input: string): string {
     input = new java.lang.String(input).getBytes(StandardCharsets.UTF_8);
-    return Base64.encodeToString(input, Base64.DEFAULT).trim();
+    return Base64.encodeToString(input, Base64.NO_WRAP);
   }
 
   base64decode(input: string): string {
-    let data = Base64.decode(input, Base64.DEFAULT);
+    let data = Base64.decode(input, Base64.NO_WRAP);
     return new java.lang.String(data, StandardCharsets.UTF_8);
   }
 
@@ -555,20 +556,20 @@ export class NSCrypto implements INSCryto {
   }
 
   keyWrapAES(wrappingKey: string, key: string): string {
-    const wrappingKey_bytes = Base64.decode(wrappingKey, Base64.DEFAULT);
-    const key_bytes = Base64.decode(key, Base64.DEFAULT);
+    const wrappingKey_bytes = Base64.decode(wrappingKey, Base64.NO_WRAP);
+    const key_bytes = Base64.decode(key, Base64.NO_WRAP);
     const cipher = new KeyWrapEngine(new AESEngine());
     cipher.init(true, new KeyParameter(wrappingKey_bytes));
     const wrappedkey_bytes = cipher.wrap(key_bytes, 0, key_bytes.length);
-    return Base64.encodeToString(wrappedkey_bytes, Base64.DEFAULT).trim();
+    return Base64.encodeToString(wrappedkey_bytes, Base64.NO_WRAP);
   }
   keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
-    const unwrappingKey_bytes = Base64.decode(unwrappingKey, Base64.DEFAULT);
-    const wrappedkey_bytes = Base64.decode(wrappedkey, Base64.DEFAULT);
+    const unwrappingKey_bytes = Base64.decode(unwrappingKey, Base64.NO_WRAP);
+    const wrappedkey_bytes = Base64.decode(wrappedkey, Base64.NO_WRAP);
 
     const cipher = new KeyWrapEngine(new AESEngine());
     cipher.init(false, new KeyParameter(unwrappingKey_bytes));
     const key = cipher.unwrap(wrappedkey_bytes, 0, wrappedkey_bytes.length);
-    return Base64.encodeToString(key, Base64.DEFAULT).trim();
+    return Base64.encodeToString(key, Base64.NO_WRAP);
   }
 }

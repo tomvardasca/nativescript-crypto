@@ -1,6 +1,6 @@
 {
   "name": "nativescript-crypto",
-  "version": "0.9.26",
+  "version": "0.9.29",
   "description": "Cryptographic functions and utilities using libsodium and native RSA and AES-GCM.",
   "main": "crypto",
   "typings": "index.d.ts",
