@@ -19,21 +19,11 @@ declare var crypto_aead_aes256gcm_decrypt: any;
 declare var crypto_aead_aes256gcm_abytes: any;
 declare var crypto_aead_aes256gcm_keybytes: any;
 declare var crypto_aead_aes256gcm_npubbytes: any;
-declare var crypto_aead_chacha20poly1305_ietf_encrypt: any;
-declare var crypto_aead_chacha20poly1305_ietf_decrypt: any;
-declare var crypto_aead_chacha20poly1305_ietf_abytes: any;
-declare var crypto_aead_chacha20poly1305_ietf_keybytes: any;
-declare var crypto_aead_chacha20poly1305_ietf_npubbytes: any;
-
-declare var IAGAesGcm: any;
-declare var IAGCipheredData: any;
-declare var ClearMessage: any;
-declare var EncryptedMessage: any;
-declare var PrivateKey: any;
-declare var PublicKey: any;
-declare var DigestType: any;
-declare var Signature: any;
-declare var IAGAuthenticationTagLength128: any;
+declare var crypto_aead_chacha20poly1305_encrypt: any;
+declare var crypto_aead_chacha20poly1305_decrypt: any;
+declare var crypto_aead_chacha20poly1305_abytes: any;
+declare var crypto_aead_chacha20poly1305_keybytes: any;
+declare var crypto_aead_chacha20poly1305_npubbytes: any;
 
 declare var DataCompression: any;
 
@@ -59,13 +49,15 @@ const toBase64 = (input: interop.Pointer, length: number): string => {
 const base64toBytes = (
   input: string
 ): { bytes: interop.AdoptedPointer; length: number } => {
-  const input_data = new NSData({ base64Encoding: input });
-  const _input_length = input_data.length;
+  const input_data = new NSData({
+    base64EncodedString: input,
+    options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
+  });
   const _input = interop.alloc(
-    _input_length * interop.sizeof(interop.types.unichar)
+    input_data.length * interop.sizeof(interop.types.unichar)
   );
   input_data.getBytes(_input);
-  return { bytes: _input, length: _input_length };
+  return { bytes: _input, length: input_data.length };
 };
 
 export class NSCrypto implements INSCryto {
@@ -215,13 +207,13 @@ export class NSCrypto implements INSCryto {
     if (crypto_aead_aes256gcm_is_available() !== 0) {
       return crypto_aead_aes256gcm_keybytes();
     }
-    return crypto_aead_chacha20poly1305_ietf_keybytes();
+    return crypto_aead_chacha20poly1305_keybytes();
   }
   secureSymetricAEADnonceLength(): number {
     if (crypto_aead_aes256gcm_is_available() !== 0) {
       return crypto_aead_aes256gcm_npubbytes();
     }
-    return crypto_aead_chacha20poly1305_ietf_npubbytes();
+    return crypto_aead_chacha20poly1305_npubbytes();
   }
   encryptSecureSymetricAEAD(
     key: string,
@@ -231,53 +223,53 @@ export class NSCrypto implements INSCryto {
     alg?: string
   ): { cipherb: string; alg: string } {
     sodium_init();
-    let cipherb;
-    const cipherb_length = new interop.Reference<number>();
-    const dataPlainb = base64toBytes(plainb);
-    const dataAAD = base64toBytes(aad);
+    let cipherb_data: interop.Pointer;
+    const cipherb_data_length = new interop.Reference<number>();
+    const plainb_data = base64toBytes(plainb);
+    const aad_data = base64toBytes(aad);
 
     if (
       crypto_aead_aes256gcm_is_available() !== 0 &&
       (alg === 'aes256gcm' || !alg)
     ) {
-      cipherb = interop.alloc(
-        (dataPlainb.length + crypto_aead_aes256gcm_abytes()) *
+      cipherb_data = interop.alloc(
+        (plainb_data.length + crypto_aead_aes256gcm_abytes()) *
           interop.sizeof(interop.types.unichar)
       );
       crypto_aead_aes256gcm_encrypt(
-        cipherb,
-        cipherb_length,
-        dataPlainb.bytes,
-        dataPlainb.length,
-        dataAAD.bytes,
-        dataAAD.length,
+        cipherb_data,
+        cipherb_data_length,
+        plainb_data.bytes,
+        plainb_data.length,
+        aad_data.bytes,
+        aad_data.length,
         null,
         base64toBytes(pnonce).bytes,
         base64toBytes(key).bytes
       );
       return {
-        cipherb: toBase64(cipherb, cipherb_length.value),
+        cipherb: toBase64(cipherb_data, cipherb_data_length.value),
         alg: 'aes256gcm'
       };
-    } else if (alg === 'chacha20poly1305_ietf' || !alg) {
-      cipherb = interop.alloc(
-        (plainb.length + crypto_aead_chacha20poly1305_ietf_abytes()) *
+    } else if (alg === 'chacha20poly1305' || !alg) {
+      cipherb_data = interop.alloc(
+        (plainb_data.length + crypto_aead_chacha20poly1305_abytes()) *
           interop.sizeof(interop.types.unichar)
       );
-      crypto_aead_chacha20poly1305_ietf_encrypt(
-        cipherb,
-        cipherb_length,
-        dataPlainb.bytes,
-        dataPlainb.length,
-        dataAAD.bytes,
-        dataAAD.length,
+      crypto_aead_chacha20poly1305_encrypt(
+        cipherb_data,
+        cipherb_data_length,
+        plainb_data.bytes,
+        plainb_data.length,
+        aad_data.bytes,
+        aad_data.length,
         null,
         base64toBytes(pnonce).bytes,
         base64toBytes(key).bytes
       );
       return {
-        cipherb: toBase64(cipherb, cipherb_length.value),
-        alg: 'chacha20poly1305_ietf'
+        cipherb: toBase64(cipherb_data, cipherb_data_length.value),
+        alg: 'chacha20poly1305'
       };
     } else {
       throw new Error(
@@ -292,41 +284,46 @@ export class NSCrypto implements INSCryto {
     pnonce: string,
     alg?: string
   ): string {
+    sodium_init();
     let plainb: interop.Pointer;
     const plainb_length = new interop.Reference<number>();
-    sodium_init();
+    const cipherb_data = base64toBytes(cipherb);
+    const aad_data = base64toBytes(aad);
+
     if (
       crypto_aead_aes256gcm_is_available() !== 0 &&
       (alg === 'aes256gcm' || !alg)
     ) {
-      let cipherb_p = base64toBytes(cipherb);
       plainb = interop.alloc(
-        (cipherb_p.length - crypto_aead_chacha20poly1305_ietf_abytes()) *
+        (cipherb_data.length - crypto_aead_aes256gcm_abytes()) *
           interop.sizeof(interop.types.unichar)
       );
       crypto_aead_aes256gcm_decrypt(
         plainb,
         plainb_length,
-        cipherb_p,
-        cipherb_p.length,
-        aad,
-        aad.length,
         null,
+        cipherb_data.bytes,
+        cipherb_data.length,
+        aad_data.bytes,
+        aad_data.length,
         base64toBytes(pnonce).bytes,
         base64toBytes(key).bytes
       );
-    } else if (alg === 'chacha20poly1305_ietf' || !alg) {
+    } else if (alg === 'chacha20poly1305' || !alg) {
       plainb = interop.alloc(
-        cipherb.length * interop.sizeof(interop.types.unichar)
+        cipherb_data.length -
+          crypto_aead_chacha20poly1305_abytes() *
+            interop.sizeof(interop.types.unichar)
       );
-      crypto_aead_chacha20poly1305_ietf_decrypt(
+
+      crypto_aead_chacha20poly1305_decrypt(
         plainb,
         plainb_length,
-        cipherb,
-        cipherb.length,
-        aad,
-        aad.length,
         null,
+        cipherb_data.bytes,
+        cipherb_data.length,
+        aad_data.bytes,
+        aad_data.length,
         base64toBytes(pnonce).bytes,
         base64toBytes(key).bytes
       );
@@ -345,19 +342,19 @@ export class NSCrypto implements INSCryto {
     iv: string,
     tagLength: number = 128
   ): { cipherb: string; atag: string } {
-    const plaintData = new NSData({ base64Encoding: plainb });
-    const aadData = new NSData({ base64Encoding: aad });
-    const ivData = new NSData({ base64Encoding: iv });
-    const keyData = new NSData({ base64Encoding: key });
+    const plaint_data = new NSData({ base64Encoding: plainb });
+    const aad_data = new NSData({ base64Encoding: aad });
+    const iv_data = new NSData({ base64Encoding: iv });
+    const key_data = new NSData({ base64Encoding: key });
 
     const res = SwCC.cryptAuthBlockModeAlgorithmDataADataKeyIvTagLengthTagError(
       SwCC_OpMode.Encrypt,
       SwCC_AuthBlockMode.Gcm,
       SwCC_Algorithm.Aes,
-      plaintData,
-      aadData,
-      keyData,
-      ivData,
+      plaint_data,
+      aad_data,
+      key_data,
+      iv_data,
       tagLength / 8,
       null
     );
@@ -380,19 +377,19 @@ export class NSCrypto implements INSCryto {
     iv: string,
     atag: string
   ): string {
-    const cipherbData: NSData = new NSData({
+    const cipherb_data: NSData = new NSData({
       base64EncodedString: cipherb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const atagData: NSData = new NSData({
+    const atag_data: NSData = new NSData({
       base64EncodedString: atag,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const aadData: NSData = new NSData({
+    const aad_data: NSData = new NSData({
       base64EncodedString: aad,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const ivData = new NSData({
+    const iv_data = new NSData({
       base64EncodedString: iv,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
@@ -405,12 +402,12 @@ export class NSCrypto implements INSCryto {
       SwCC_OpMode.Decrypt,
       SwCC_AuthBlockMode.Gcm,
       SwCC_Algorithm.Aes,
-      cipherbData,
-      aadData,
+      cipherb_data,
+      aad_data,
       keyData,
-      ivData,
-      atagData.length,
-      atagData
+      iv_data,
+      atag_data.length,
+      atag_data
     );
     return res.valueForKey('data').base64EncodedStringWithOptions(kNilOptions);
   }
@@ -418,14 +415,18 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this.rsaEncPaddingType).indexOf(padding) === -1) {
       throw new Error(`encryptRSA padding "${padding}" not found!`);
     }
-    let plainbData: NSData = new NSData({
+    const _pub_key_pem = pub_key_pem.replace(/\r?\n|\r/g, '\n');
+
+    const pub_key_pem_data: NSData = SwKeyConvert_PublicKey.pemToPKCS1DERError(
+      _pub_key_pem
+    );
+    const plainb_data: NSData = new NSData({
       base64EncodedString: plainb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const derKey = SwKeyConvert_PublicKey.pemToPKCS1DERError(pub_key_pem);
     return SwRSA.encryptDerKeyTagPaddingDigestError(
-      plainbData,
-      derKey,
+      plainb_data,
+      pub_key_pem_data,
       null,
       this.rsaEncPaddingType[padding],
       SwCC_DigestAlgorithm.Sha1
@@ -435,14 +436,18 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this.rsaEncPaddingType).indexOf(padding) === -1) {
       throw new Error(`decryptRSA padding "${padding}" not found!`);
     }
-    let cipherbData: NSData = new NSData({
+    const _priv_key_pem = priv_key_pem.replace(/\r?\n|\r/g, '\n');
+
+    const priv_key_pem_data: NSData = SwKeyConvert_PrivateKey.pemToPKCS1DERError(
+      _priv_key_pem
+    );
+    const cipherb_data: NSData = new NSData({
       base64EncodedString: cipherb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const derKey = SwKeyConvert_PrivateKey.pemToPKCS1DERError(priv_key_pem);
     return SwRSA.decryptDerKeyTagPaddingDigestError(
-      cipherbData,
-      derKey,
+      cipherb_data,
+      priv_key_pem_data,
       null,
       this.rsaEncPaddingType[padding],
       SwCC_DigestAlgorithm.Sha1
@@ -453,14 +458,20 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this.digestType).indexOf(digest_type) === -1) {
       throw new Error(`signRSA digest type "${digest_type}" not found!`);
     }
-    let messagebData: NSData = new NSData({
+    const _priv_key_pem = priv_key_pem.replace(/\r?\n|\r/g, '\n');
+
+    const priv_key_pem_data: NSData = SwKeyConvert_PrivateKey.pemToPKCS1DERError(
+      _priv_key_pem
+    );
+
+    const messageb_data: NSData = new NSData({
       base64EncodedString: messageb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const derKey = SwKeyConvert_PrivateKey.pemToPKCS1DERError(priv_key_pem);
+
     return SwRSA.signDerKeyPaddingDigestSaltLenError(
-      messagebData,
-      derKey,
+      messageb_data,
+      priv_key_pem_data,
       SwRSA_AsymmetricSAPadding.Pkcs15,
       SwCC_DigestAlgorithm.Sha256,
       0,
@@ -477,24 +488,29 @@ export class NSCrypto implements INSCryto {
     if (Object.keys(this.digestType).indexOf(digest_type) === -1) {
       throw new Error(`verifyRSA digest type "${digest_type}" not found!`);
     }
-    let messagebData: NSData = new NSData({
+    const _pub_key_pem = pub_key_pem.replace(/\r?\n|\r/g, '\n');
+
+    const pub_key_pem_data: NSData = SwKeyConvert_PublicKey.pemToPKCS1DERError(
+      _pub_key_pem
+    );
+
+    const messageb_data: NSData = new NSData({
       base64EncodedString: messageb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let signaturebData: NSData = new NSData({
+    const signatureb_data: NSData = new NSData({
       base64EncodedString: signatureb,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    const derKey = SwKeyConvert_PublicKey.pemToPKCS1DERError(pub_key_pem);
     try {
       return (
         SwRSA.verifyDerKeyPaddingDigestSaltLenSignedDataError(
-          messagebData,
-          derKey,
+          messageb_data,
+          pub_key_pem_data,
           SwRSA_AsymmetricSAPadding.Pkcs15,
           SwCC_DigestAlgorithm.Sha256,
           0,
-          signaturebData,
+          signatureb_data,
           null
         ) == 1
       );
@@ -545,34 +561,34 @@ export class NSCrypto implements INSCryto {
   }
 
   keyWrapAES(wrappingKey: string, key: string): string {
-    let wrappingKeyData = new NSData({
+    let wrapping_key_data = new NSData({
       base64EncodedString: wrappingKey,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let keyData = new NSData({
+    let key_data = new NSData({
       base64EncodedString: key,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
     return SwKeyWrap.SymmetricKeyWrapKekRawKeyError(
       SwKeyWrap.rfc3394IV,
-      wrappingKeyData,
-      keyData,
+      wrapping_key_data,
+      key_data,
       null
     ).base64EncodedStringWithOptions(kNilOptions);
   }
   keyUnWrapAES(unwrappingKey: string, wrappedkey: string): string {
-    let unwrappingKeyData = new NSData({
+    let unwrapping_key_data = new NSData({
       base64EncodedString: unwrappingKey,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
-    let wrappedData = new NSData({
+    let wrapped_data = new NSData({
       base64EncodedString: wrappedkey,
       options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters
     });
     return SwKeyWrap.SymmetricKeyUnwrapKekWrappedKeyError(
       SwKeyWrap.rfc3394IV,
-      unwrappingKeyData,
-      wrappedData,
+      unwrapping_key_data,
+      wrapped_data,
       null
     ).base64EncodedStringWithOptions(kNilOptions);
   }
