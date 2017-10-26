@@ -1,7 +1,8 @@
 {
   "name": "nativescript-crypto",
-  "version": "0.9.36",
-  "description": "Cryptographic functions and utilities using libsodium and native RSA and AES-GCM.",
+  "version": "0.9.37",
+  "description":
+    "Cryptographic functions and utilities using libsodium and native RSA and AES-GCM.",
   "main": "crypto",
   "typings": "index.d.ts",
   "nativescript": {
@@ -12,16 +13,22 @@
   },
   "scripts": {
     "tsc": "tsc -skipLibCheck",
-    "postclone": "npm i && node scripts/postclone.js && cd ../demo && npm i && cd ../src && npm run plugin.link",
-    "test.android": "npm i && npm run tsc && npm run tslint && cd ../demo && tns build android && tns test android --justlaunch",
-    "test.ios": "npm i && npm run tsc && npm run tslint && cd ../demo && tns build ios && tns test ios --justlaunch",
-    "tslint": "cd .. && tslint \"**/*.ts\" --config tslint.json --exclude \"**/node_modules/**\"",
-    "plugin.link": "npm link && cd ../demo && npm link nativescript-crypto && cd ../src",
+    "postclone":
+      "npm i && node scripts/postclone.js && cd ../demo && npm i && cd ../src && npm run plugin.link",
+    "test.android":
+      "npm i && npm run tsc && npm run tslint && cd ../demo && tns build android && tns test android --justlaunch",
+    "test.ios":
+      "npm i && npm run tsc && cd ../demo && tns build ios && tns test ios --justlaunch",
+    "plugin.link":
+      "npm link && cd ../demo && npm link nativescript-crypto && cd ../src",
     "plugin.tscwatch": "npm run tsc -- -w",
-    "demo.ios": "npm i && npm run tsc && cd ../demo && tns run ios --syncAllFiles",
-    "demo.android": "npm i && npm run tsc && cd ../demo && tns run android --syncAllFiles",
+    "demo.ios":
+      "npm i && npm run tsc && cd ../demo && tns run ios --syncAllFiles",
+    "demo.android":
+      "npm i && npm run tsc && cd ../demo && tns run android --syncAllFiles",
     "w-demo.ios": "concurrently 'npm run demo.ios' 'npm run plugin.tscwatch'",
-    "w-demo.android": "concurrently 'npm run demo.android' 'npm run plugin.tscwatch'"
+    "w-demo.android":
+      "concurrently 'npm run demo.android' 'npm run plugin.tscwatch'"
   },
   "repository": {
     "type": "git",

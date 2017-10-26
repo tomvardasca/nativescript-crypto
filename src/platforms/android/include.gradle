@@ -8,6 +8,6 @@ android {
 }
 
 dependencies {
-    //compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.6@aar'
+    compile 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.7@aar'
     compile 'com.madgag.spongycastle:core:1.56.0.0'
 }

@@ -102,7 +102,7 @@ import Foundation
 
 
 
- @objc open class SwKeyConvert_PrivateKey: NSObject {
+@objc open class SwKeyConvert_PrivateKey: NSObject {
 
     public static func pemToPKCS1DER(_ pemKey: String) throws -> Data {
         guard let derKey = try? PEM.PrivateKey.toDER(pemKey) else {
@@ -719,7 +719,7 @@ import Foundation
     }
 
     @objc public static func sign(_ message: Data, derKey: Data, padding: AsymmetricSAPadding,
-                            digest: CC.DigestAlgorithm, saltLen: Int) throws -> Data {
+                                  digest: CC.DigestAlgorithm, saltLen: Int) throws -> Data {
         let key = try importFromDERKey(derKey)
         defer { CCRSACryptorRelease!(key) }
         guard getKeyType(key) == .privateKey else { throw CCError(.paramError) }
@@ -755,8 +755,8 @@ import Foundation
     }
 
     @objc public static func verify(_ message: Data, derKey: Data, padding: AsymmetricSAPadding,
-                              digest: CC.DigestAlgorithm, saltLen: Int,
-                              signedData: Data) throws -> NSNumber {
+                                    digest: CC.DigestAlgorithm, saltLen: Int,
+                                    signedData: Data) throws -> NSNumber {
         let key = try importFromDERKey(derKey)
         defer { CCRSACryptorRelease!(key) }
         guard getKeyType(key) == .publicKey else { throw CCError(.paramError) }
@@ -1265,7 +1265,7 @@ public typealias CCCryptorStatus = Int32
             // let cipher = data.subdata(in: 0..<(data.count - tagLength))
             var _tag = tag;
             if(_tag == nil) {
-               _tag = data.subdata(in: (data.count - tagLength)..<data.count)
+                _tag = data.subdata(in: (data.count - tagLength)..<data.count)
             }
 
             let cryptResult = try cryptFun(opMode, algorithm, data,
@@ -2160,3 +2160,4 @@ extension String {
         return data
     }
 }
+
