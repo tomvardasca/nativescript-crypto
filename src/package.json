@@ -60,13 +60,13 @@
     "tns-core-modules": "^3.0.0"
   },
   "devDependencies": {
-    "concurrently": "^3.5.0",
+    "concurrently": "^4.1.1",
     "prompt": "^1.0.0",
     "rimraf": "^2.5.0",
-    "tns-core-modules": "^3.0.0",
-    "tns-platform-declarations": "^3.1.1",
+    "tns-core-modules": "^6.0.6",
+    "tns-platform-declarations": "^6.0.6",
     "tslint": "^5.0.0",
-    "typescript": "^2.2.2"
+    "typescript": "^3.5.3"
   },
   "dependencies": {},
   "bootstrapper": "nativescript-plugin-seed"
