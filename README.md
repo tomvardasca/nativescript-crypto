@@ -1,5 +1,7 @@
 # NativeScript Crypto
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/tomvardasca/nativescript-crypto.svg)](https://greenkeeper.io/)
+
 ...
 ## (Optional) Prerequisites / Requirements
 
